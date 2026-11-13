@@ -1,0 +1,118 @@
+{
+ "texts": {
+  "city": "Two incomes of $280,000 and $511,000 net worth but vulnerable due to thin cash and large protection shortfalls.",
+  "strength": "You save $26,000 a year and hold $330,000 in investable assets to build from.",
+  "bubbles": {
+   "cashflow": {
+    "building": "Free cash flow is small: $15,032 a year.",
+    "plain": "After taxes, bills and savings you have $15,032 a year left. Think of it as the monthly leftovers you split between goals.",
+    "standard": "Net cash flow this year is $15,032 a year and income is $280,000. Yearly savings total $26,000 a year and current savings go to the 529 ($8,000) and a taxable account ($12,000). Closing your retirement gap is projected to need $34,165 a year, which is more than twice your free cash flow."
+   },
+   "cushion": {
+    "building": "Accessible cash is $19,000, far below the 8–9 month target.",
+    "plain": "You have $19,000 available today, which covers only a little over a month of essentials. It’s like having a small spare tire when you need a full-size one.",
+    "standard": "Accessible cash (bank plus money market) is $19,000 and covers 1.4 months of essential expenses. Recommended emergency reserve is $106,860 to $120,218, leaving an $87,860 shortfall; with the $4,500 vacation set aside the shortfall grows to $92,360 and coverage drops to 1.1 months."
+   },
+   "retirement": {
+    "building": "Nothing is going into retirement today; a $1,427,456 retirement-account gap exists.",
+    "plain": "Your plan projects retirement spending need of $124,071 a year. Social Security covers about half; savings must cover the rest.",
+    "standard": "Yearly retirement spending need is $124,071 a year, with guaranteed income of $59,466 a year covering 49% of that need. Yearly retirement spending to be paid from savings is $62,932 a year, and the retirement-account gap at retirement is $1,427,456; extra yearly savings projected to close the gap are $34,165 a year."
+   },
+   "debt": {
+    "building": "Total debt is $618,000, with a high-rate card of $18,000 at 24.9%.",
+    "plain": "You owe $618,000 in total, most of it a mortgage. One credit card charges much higher interest than the rest.",
+    "standard": "Total debt is $618,000 (220.71% of income) with a $560,000 mortgage at 6.5%. The Chase Sapphire card is $18,000 at 24.9% and paid $450 a month, projected to be paid off by January 2034 if that payment continues. Housing and debt payments are 27.25% of income."
+   },
+   "protection": {
+    "building": "Life cover is well below recommended levels and no umbrella is in place.",
+    "plain": "Daniel has $250,000 life insurance; Emily has $200,000. Recommended ranges are much higher, and you have no umbrella policy.",
+    "standard": "Daniel’s life insurance is $250,000 against a recommended $1,600,000 to $2,400,000; Emily’s is $200,000 against $1,200,000 to $1,800,000, leaving shortfalls of $1,350,000 and $1,000,000 respectively. Umbrella liability cover: None, with a recommended $1,000,000."
+   },
+   "college": {
+    "building": "College gap is $106,552 despite $30,000 saved in 529s and $8,000 yearly contributions.",
+    "plain": "You have $30,000 in 529 accounts and add $8,000 a year, but still face a remaining need. Think of the 529 as a partially filled college jar.",
+    "standard": "Saved in 529 accounts: $30,000 with $8,000 a year going in. Still to fund for college total $106,552 today: Oliver needs $50,742 (starts August 2033) and Sophia $55,810 (starts August 2035)."
+   },
+   "investments": {
+    "building": "Investable assets $330,000, but portfolio stock allocation is below target.",
+    "plain": "You hold $330,000 of invested savings and $250,000 in 401(k)s, but contributions are $0 today. Your portfolio has more cash and bonds than the plan target.",
+    "standard": "Total assets include $750,000 home and $330,000 invested savings. Two 401(k)s hold $250,000 combined ($150,000 Daniel, $100,000 Emily) with no contributions today. Your mix today is 54% stocks, 36% bonds, 10% cash versus a target of 66% stocks, 27% bonds, 6% cash."
+   },
+   "score": {
+    "building": "Overall score 52/100 in the vulnerable band, weakest in insurance and protection.",
+    "plain": "Your published score is 52, which the plan calls vulnerable. Insurance and protection score 0/20, pulling the total down.",
+    "standard": "The published score is 52. Strengths include liquidity (13/15 points) while insurance and protection are 0/20. The plan’s top move is adding $1,166,000 of life cover to reach the next mortality-coverage anchor and raise the score from 52 to 57."
+   },
+   "assumptions": {
+    "building": "Plan assumptions set retirement ages, growth rates and future incomes.",
+    "plain": "The plan assumes Daniel retires at 62 and Emily at 60, with prices rising 3% a year. Investments are assumed to grow 7.58% a year.",
+    "standard": "Key assumptions: Daniel retires at 62 and Emily at 60, plan runs to age 91, prices rise 3% a year, investments grow 7.58% a year, Daniel’s salary $160,000 and Emily’s $120,000 continue until 2044, and Social Security starts for Daniel in 2049 and Emily in 2051."
+   }
+  },
+  "moves": {
+   "m0": {
+    "title": "Add life coverage",
+    "why": "The plan shows large life-insurance shortfalls: Daniel $1,350,000 and Emily $1,000,000.",
+    "steps": [
+     "List current life policies and their death benefits and beneficiaries",
+     "Calculate how much more each of you needs versus recommended range",
+     "Get quotes from your insurer or agent for the additional cover",
+     "Decide together how much of the $1,166,000 addition to buy now"
+    ],
+    "quiz": {
+     "q": "According to the plan, how much life cover is Daniel short by?",
+     "options": [
+      "$1,350,000",
+      "$1,166,000",
+      "$250,000"
+     ],
+     "correct": 0,
+     "explain": "The plan lists Daniel’s shortfall as $1,350,000 versus the recommended $1,600,000 to $2,400,000."
+    }
+   },
+   "m1": {
+    "title": "Buy an umbrella policy",
+    "why": "You have no umbrella cover while the plan recommends $1,000,000 of liability protection.",
+    "steps": [
+     "Check your current home and auto liability limits on existing policies",
+     "Ask an insurer for a $1,000,000 umbrella quote to top up liability",
+     "Confirm what home and auto cover the umbrella would sit on top of",
+     "Compare costs and add the umbrella if it fits your budget"
+    ],
+    "quiz": {
+     "q": "What umbrella liability amount does the plan recommend you consider?",
+     "options": [
+      "$1,000,000",
+      "$560,000",
+      "$250,000"
+     ],
+     "correct": 0,
+     "explain": "The plan’s recommended umbrella liability cover is $1,000,000, and you currently have none."
+    }
+   },
+   "m2": {
+    "title": "Confirm employer 401(k) match",
+    "why": "Raising retirement saving matters and the plan notes no recorded employer match today.",
+    "steps": [
+     "Contact HR at each employer to ask about 401(k) match details",
+     "Find out matching percentage and any vesting rules",
+     "If a match exists, adjust payroll deferral to capture it",
+     "Revisit how much of your $15,032 free cash to redirect"
+    ],
+    "quiz": {
+     "q": "Why does the plan suggest checking each employer about a 401(k) match?",
+     "options": [
+      "Because no match is recorded today and a match is free return",
+      "Because matches replace the need for emergency cash",
+      "Because the match will pay off the credit card"
+     ],
+     "correct": 0,
+     "explain": "The plan specifically notes no employer match is recorded today and checking for a match helps you capture extra retirement savings."
+    }
+   }
+  }
+ },
+ "generatedBy": "model",
+ "rejected": 0,
+ "hash": "c7e3763f7d82add6"
+}

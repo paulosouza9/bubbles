@@ -1,0 +1,118 @@
+{
+ "texts": {
+  "city": "You own your home outright and have strong protection, but retirement and college funding compete with limited cash flow.",
+  "strength": "You hold $80,000 in cash that covers 7.9 months of essential expenses today.",
+  "bubbles": {
+   "cashflow": {
+    "building": "You save 24% of income but run a yearly shortfall of -$6,418.",
+    "plain": "You save a lot—$60,000 a year—but your spending and taxes exceed income. Think of your money like buckets: one bucket is taxable savings, another should be retirement and college, but right now only the taxable bucket is being filled.",
+    "standard": "Your income is $250,000 and you save $60,000 a year (24% of income), yet net cash flow is -$6,418 a year. Expenses are $116,100, taxes $66,818, and housing expenses $13,500 a year. Retirement accounts hold $0 while $50,000 a year goes to taxable accounts, and college needs of $98,838 compete for the same cash."
+   },
+   "cushion": {
+    "building": "Your $80,000 cash exceeds the recommended reserve, but only $750 sits above near-term goals.",
+    "plain": "You have more than the suggested emergency fund, so immediate risk is low. After setting aside a $6,000 vacation and Ethan’s $12,500 college payment, only a small extra cushion remains.",
+    "standard": "Accessible cash is $80,000, covering 7.9 months of essential expenses before near-term goals. The recommended reserve is $50,625 to $60,750, and emergency reserve plus near-term goals is $69,125 to $79,250. After setting aside the $18,500 of near-term goals, months covered fall to 6.1 and only $750 sits above both reserve and those goals."
+   },
+   "retirement": {
+    "building": "Projected savings and investments run out at age 73, leaving a large long-term gap.",
+    "plain": "Your retirement plan depends heavily on savings because guaranteed income is limited. Social Security covers only part, so savings must stretch a long time.",
+    "standard": "Planned spending left unpaid by the end of the plan is $1,448,673, with savings and investments running out at age 73. Yearly retirement spending need averages $153,672, and guaranteed income (Social Security) averages $38,336, covering 25% of that need. The remaining $115,335 a year would need to come from savings, and retirement accounts currently hold $0."
+   },
+   "debt": {
+    "building": "You have no debt and your home is owned outright with $900,000 equity.",
+    "plain": "You carry no loans, so monthly income isn’t eaten by debt payments. That leaves flexibility to fund college or retirement, but cash flow still matters.",
+    "standard": "Total debt is $0 (0% of yearly income) and housing and debt payments equal 5.4% of income, well below lender strain thresholds. With no mortgage and $900,000 in home equity, borrowing remains an option, but the plan notes the thin cash cushion as the main pressure."
+   },
+   "protection": {
+    "building": "Life, disability and umbrella cover are in place at recommended levels for your household.",
+    "plain": "You have life insurance and an umbrella policy to protect your family if you can’t work. These policies are sized to cover major risks so your children are protected.",
+    "standard": "Life insurance is $2,000,000, within the recommended $1,250,000 to $2,500,000 range, and umbrella liability cover is $2,000,000, meeting the recommended minimum. Long-term disability pays $12,500 a month, so income protection is strong and doesn’t compete with savings goals. The plan suggests confirming underlying home and auto cover for gaps under the umbrella."
+   },
+   "college": {
+    "building": "College still needs $98,838 beyond current 529 balances, with Ethan starting in August 2026.",
+    "plain": "You currently have $0 in 529s and will need more cash for both children’s tuition. College funding is near-term for Ethan and competes with retirement saving.",
+    "standard": "Saved in 529 accounts is $0 and still to fund for college is $98,838 today. Ethan has $48,469 still to fund and starts August 2026, while Ava has $50,369 still to fund and starts August 2028. Because yearly cash flow is about -$6,418, college and retirement must be weighed as competing uses of cash."
+   },
+   "investments": {
+    "building": "Most wealth is your $900,000 home; invested accounts are $335,000 with a stock allocation slightly above target.",
+    "plain": "Your investable assets are mostly outside retirement accounts and concentrated in a few ETFs. The house is valuable but not easily turned into yearly spending money.",
+    "standard": "Invested savings are $335,000 with 68% stocks, 12% bonds, 20% cash versus a target mix of 65% stocks, 14% bonds, 21% cash. Major holdings include VTI $162,000, SCHD $93,000, JNK $50,000, and VWO $30,000. No retirement accounts are listed, and you could contribute up to $7,500 to a traditional IRA and up to $4,400 to an HSA, both currently at $0."
+   },
+   "score": {
+    "building": "Your published score is 82, in the strong band, with clear moves to improve it.",
+    "plain": "An overall 82 means you’re in good shape, especially on liquidity, debt and protection. A few targeted changes could raise the score a few points.",
+    "standard": "Score components: Savings and cash flow 22/30, Debt 20/20, Investments 10/15, Liquidity 15/15, Insurance 14/20. The top move is adding homeowners insurance to close a coverage gap (score 82 to 84). Reducing VTI concentration and adjusting growth allocation are other score-improving options."
+   },
+   "assumptions": {
+    "building": "The plan assumes you retire at 65 and the plan runs to age 91 with prices rising 3% a year.",
+    "plain": "Several baseline assumptions shape the projection, like your retirement age and ongoing salary. These are the lens the plan uses to test outcomes.",
+    "standard": "Key assumptions include Samantha retires at 65, the plan runs until age 91, prices rise 3% a year, and Samantha’s salary of $250,000 continues until 2044. Social Security for Samantha is assumed to start in 2046, and the plan includes recurring items like a $6,000 vacation every year."
+   }
+  },
+  "moves": {
+   "m0": {
+    "title": "Add homeowners insurance on primary home",
+    "why": "The plan recommends this to close a coverage gap and raises your score from 82 to 84.",
+    "steps": [
+     "Confirm current home policy limits and exclusions.",
+     "Get a homeowners insurance quote for your primary home.",
+     "Buy the policy that fills the coverage gap indicated.",
+     "Record the new policy so the plan reflects updated cover."
+    ],
+    "quiz": {
+     "q": "What score improvement does adding homeowners insurance produce in the plan?",
+     "options": [
+      "No change",
+      "From 82 to 84",
+      "From 82 to 90"
+     ],
+     "correct": 1,
+     "explain": "The plan says adding homeowners insurance moves the published score from 82 to 84."
+    }
+   },
+   "m1": {
+    "title": "Reduce VTI concentration",
+    "why": "The plan suggests cutting VTI concentration to improve investments and raise the score from 82 to 83.",
+    "steps": [
+     "Check your current VTI holding and its share of investable accounts.",
+     "Decide how much of VTI to sell to reach the next band.",
+     "Execute the sell and reallocate proceeds across other holdings.",
+     "Update account records so the plan shows the new allocation."
+    ],
+    "quiz": {
+     "q": "How much of VTI does the plan say to shift to change the concentration band?",
+     "options": [
+      "$17,100",
+      "$58,300",
+      "$4,400"
+     ],
+     "correct": 1,
+     "explain": "The plan specifies about $58,300 toward reducing VTI concentration to reach the next band."
+    }
+   },
+   "m2": {
+    "title": "Reduce growth allocation toward glide",
+    "why": "The plan recommends shifting allocation from 85% to 80% growth to better fit your horizon and raise the score.",
+    "steps": [
+     "Review current invested mix showing 85% growth today.",
+     "Decide which assets equal about $17,100 to rebalance away from growth.",
+     "Sell or rebalance that amount into less growth-oriented holdings.",
+     "Confirm the new mix aligns with the 80% glide target."
+    ],
+    "quiz": {
+     "q": "What invested-book amount does the plan cite to move the mix toward the glide?",
+     "options": [
+      "$58,300",
+      "$17,100",
+      "$335,000"
+     ],
+     "correct": 1,
+     "explain": "The plan notes about $17,100 of the invested book would move the mix from 85% to 80% growth."
+    }
+   }
+  }
+ },
+ "generatedBy": "model",
+ "rejected": 0,
+ "hash": "e486acccb2722be1"
+}

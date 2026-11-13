@@ -1,0 +1,118 @@
+{
+ "texts": {
+  "city": "You earn $270,000, hold strong cash reserves, but face life‑insurance and college funding gaps while retirement is on track.",
+  "strength": "You hold $150,800 in accessible cash, covering about 16 months of essentials and giving clear flexibility.",
+  "bubbles": {
+   "cashflow": {
+    "building": "You save steadily but have an uncertain surplus.",
+    "plain": "You bring in $270,000 a year before taxes and save $61,500 of it. That leaves a reported net cash flow of $36,961 this year to decide how to use.",
+    "standard": "You save 22.8% of income, with yearly savings of $61,500 and employer matches fully captured. The plan shows net cash flow this year of $36,961, but that figure is low confidence and spending may be understated. Roth IRAs show $0 contributed so far and could each accept up to $5,250.10, which competes with college saving."
+   },
+   "cushion": {
+    "building": "You hold a larger-than-recommended emergency cushion.",
+    "plain": "You have $150,800 in bank and taxable money market accounts, which covers about 16 months of essentials. That cushion still covers 15.4 months after your $6,000 vacation set‑aside.",
+    "standard": "Accessible cash is $150,800 today, with a recommended emergency reserve of $75,180 to $84,578. Cash above reserve and near‑term goals totals $60,223, a resource available to address protection gaps."
+   },
+   "retirement": {
+    "building": "Retirement looks secure largely from guaranteed income.",
+    "plain": "Retirement needs average $184,304 a year, and guaranteed income covers most of that. The plan projects your savings won't run out before age 91.",
+    "standard": "Yearly retirement spending need averages $184,304 and guaranteed income averages $171,056 a year, covering 93% of that need. Savings are projected to supply $12,853 a year, with savings and investments of $2,371,900.89 projected to remain at plan end. The portfolio is about 77% equity now versus a 60% Moderate target, so you may see larger swings."
+   },
+   "debt": {
+    "building": "Most debt is manageable, but the 18% credit card is costly.",
+    "plain": "You have $93,000 total debt and an $18,000 Chase card at 18% interest. The card is currently paid $300 a month and would be paid off by September 2039 at that payment.",
+    "standard": "Total debt is $93,000, with housing and debt payments equal to 15.1% of income. The Chase credit card balance is $18,000 at 18% interest, paid $300 a month. Your cash cushion of $150,800 sits above the 8–9 month target and could be weighed against this high‑rate balance."
+   },
+   "protection": {
+    "building": "You have important life‑insurance shortfalls and no umbrella policy.",
+    "plain": "Timothy has $140,000 of life insurance versus a recommended $750,000 to $1,500,000. Melanie has $110,000 versus a recommended $600,000 to $1,200,000, and you have no umbrella cover.",
+    "standard": "Timothy’s life insurance is $140,000 with a recommended range of $750,000 to $1,500,000; Melanie’s is $110,000 with a recommended $600,000 to $1,200,000. You have no umbrella liability cover against a recommended $1,000,000, leaving a clear liability gap given dependents and exposed assets."
+   },
+   "college": {
+    "building": "College is unfunded: $0 in 529s and $113,509 still needed.",
+    "plain": "You have $0 in 529 accounts and need about $113,509 more for Liam and Josh. That breaks to roughly $4,609.22 more saved each year as a first‑year projection.",
+    "standard": "Still to fund for college today is $113,509, with $55,118 for Liam (starts August 2038) and $58,391 for Josh (starts August 2041). Meeting the first‑year estimate would take about $4,609.22 more per year, which competes with other priorities."
+   },
+   "investments": {
+    "building": "Much wealth sits in your home and a lot of cash is uninvested.",
+    "plain": "Real estate is $350,000 and makes up 44.4% of your $788,500 in total assets. You hold $150,000 in cash and $210,000 in invested savings, so a big share of liquid wealth isn't invested for long‑term growth.",
+    "standard": "Your accounts show 45% stocks, 10% bonds, 44% cash, with $154,200 in cash across accounts. VTI is $58,800, VEA $39,200, and LQD $14,700. Both employer matches are being captured, worth $8,000 and $6,000 a year, supporting retirement while college remains the primary funding gap."
+   },
+   "score": {
+    "building": "Your overall score is 60, limited mainly by insurance and the high‑rate card.",
+    "plain": "Your score is 60 out of 100. Two main limits are the 18% revolving card and life‑cover gaps; fixing the card improves the score to 62.",
+    "standard": "Liquidity and retirement save you many points: savings and cash flow 26/30, liquidity 15/15. Debt scores 12/20 and insurance 7/20. The first modeled move — paying $6,800 on the 18% card — raises the published score from 60 to 62, leaving $11,200 total after that move."
+   },
+   "assumptions": {
+    "building": "The plan rests on a set of explicit timing and growth assumptions.",
+    "plain": "The plan assumes Timothy retires at 62 and Melanie at 60, and prices rise 3% a year. Investment growth is assumed 7.56% a year.",
+    "standard": "Key assumptions include Timothy retiring at 62, Melanie at 60, the plan running to age 91, prices rising 3% a year, and investments growing 7.56% a year. Social Security start years and salary continuations are also specified in the plan."
+   }
+  },
+  "moves": {
+   "m0": {
+    "title": "Pay $6,800 toward the credit card",
+    "why": "The plan models paying $6,800 on the 18% card to remove high revolving exposure and raise your score.",
+    "steps": [
+     "Confirm your Chase card balance and current statement.",
+     "Transfer $6,800 from your accessible cash account.",
+     "Make the payment to reduce the $18,000 balance.",
+     "Keep $81,180 to $90,578 emergency target in mind when paying."
+    ],
+    "quiz": {
+     "q": "What immediate effect does paying $6,800 on the card have in the plan?",
+     "options": [
+      "It removes the card balance entirely.",
+      "It raises your score from 60 to 62.",
+      "It increases your emergency reserve to 18 months."
+     ],
+     "correct": 1,
+     "explain": "The plan shows paying $6,800 on the 18% card moves the published score from 60 to 62."
+    }
+   },
+   "m1": {
+    "title": "Add life insurance coverage",
+    "why": "The plan suggests adding $235,000 of life cover to raise the mortality ratio and address the gap.",
+    "steps": [
+     "Review current life policies: $140,000 and $110,000 listed.",
+     "Decide together how much to add toward the $235,000 increase.",
+     "Contact your insurer or agent to request quotes and next steps.",
+     "Keep college and debt obligations in mind when choosing coverage."
+    ],
+    "quiz": {
+     "q": "How much additional life cover does the plan propose adding?",
+     "options": [
+      "$6,800 more life cover",
+      "$235,000 of life cover",
+      "$1,000,000 umbrella policy"
+     ],
+     "correct": 1,
+     "explain": "The plan move titled 'Add life cover' specifies adding $235,000 of life cover to raise the mortality ratio."
+    }
+   },
+   "m2": {
+    "title": "Buy $1M umbrella liability cover",
+    "why": "The plan recommends adding $1M of umbrella to raise your liability shield since you currently have none.",
+    "steps": [
+     "Confirm you currently have no umbrella policy listed.",
+     "Request quotes for $1,000,000 umbrella coverage from your insurer.",
+     "Compare costs and limits against your exposed assets and liabilities.",
+     "Add the policy if it fits your budget and protection needs."
+    ],
+    "quiz": {
+     "q": "What umbrella amount does the plan recommend you add?",
+     "options": [
+      "$150,800 umbrella cover",
+      "$1,000,000 umbrella cover",
+      "$235,000 umbrella cover"
+     ],
+     "correct": 1,
+     "explain": "The plan states you have no umbrella policy and recommends adding $1,000,000 of umbrella cover."
+    }
+   }
+  }
+ },
+ "generatedBy": "model",
+ "rejected": 0,
+ "hash": "b26e6a13a30de6cd"
+}

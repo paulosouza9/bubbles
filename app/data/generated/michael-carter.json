@@ -1,0 +1,110 @@
+{
+ "texts": {
+  "city": "You have solid savings and income but negative yearly cash flow and tight near-term cash needs.",
+  "strength": "You save $43,000 a year and capture your full $7,000 employer match.",
+  "bubbles": {
+   "cashflow": {
+    "building": "Your income is being asked to cover too many goals at once.",
+    "plain": "You bring in $180,000 a year before taxes. After taxes and spending, your cash flow is -$8,336 a year.",
+    "standard": "You save $43,000 a year (including a $7,000 employer match) but still run a net cash flow of -$8,336 a year. Your income is $180,000 and your expenses are $66,000 a year, with taxes of $40,664. That negative flow means retirement, near-term goals, and a cash cushion are competing for the same dollars."
+   },
+   "cushion": {
+    "building": "Your accessible cash is well below the reserve plus near-term goals.",
+    "plain": "You have $30,000 available now, which covers about 3.2 months of expenses. Adding your January 2027 home and vacation needs pushes the cash target to $163,330 to $172,636.",
+    "standard": "Accessible cash is $30,000 and covers 3.2 months of essential expenses against a recommended reserve of $46,530 to $55,836. The January 2027 home payment of $113,300 plus a $3,500 vacation raise the cash target to $163,330 to $172,636, leaving you with 0 months covered after setting those aside."
+   },
+   "retirement": {
+    "building": "Retiring at 58 leaves a substantial retirement-account gap and money runs out before the plan ends.",
+    "plain": "You aim to retire at 58 but savings run out at age 85, leaving $32,439 of planned spending unpaid. Social Security covers about 34% of your $89,649 yearly need.",
+    "standard": "At retirement you have a net worth of $1,535,457 with $1,071,095 liquid, but savings and investments run out at age 85 leaving $32,439 unpaid. Guaranteed income averages $30,036 a year and covers 34% of the $89,649 yearly retirement spending need, so $59,613 a year must come from savings. The retirement-account gap is $1,177,586 in today's dollars, and closing it projects to require $20,231 more per year."
+   },
+   "debt": {
+    "building": "You have manageable total debt, but the 20% credit card is expensive for its size.",
+    "plain": "Total debt is $28,500 with payments of $11,400 a year. Your Amex Platinum balance is $3,500 at 20% interest and is projected to be paid off by July 2028 if $200 a month continues.",
+    "standard": "Debt totals $28,500, about 15.83% of your $180,000 income, and debt payments are $11,400 a year. The Amex Platinum at $3,500 carries 20% interest and, at $200 a month, is on track to be paid off by July 2028. Your housing and debt payments share of income is 25.37%, below the 36% threshold."
+   },
+   "protection": {
+    "building": "Your life insurance and umbrella coverage are far below recommended levels.",
+    "plain": "You have $180,000 of life insurance while the plan recommends $900,000 to $1,800,000. You have no umbrella liability cover, but the recommendation is $1,000,000.",
+    "standard": "Life insurance is $180,000 versus a recommended $900,000 to $1,800,000, leaving a large shortfall. You have no umbrella cover though the plan recommends $1,000,000. Because your $180,000 income is the only household income, this protection gap matters for covering debts like your $15,000 car loan, $10,000 student loan, and $3,500 credit card."
+   },
+   "investments": {
+    "building": "Most wealth is investable but your current stock mix lags your Growth target.",
+    "plain": "You hold $145,000 of invested savings, which is 58.7% of $247,000 total assets. Your current mix is 59% stocks versus a 67% target for Growth.",
+    "standard": "Invested savings are $145,000 (58.7% of $247,000 total assets) and 73.5% of assets are in stocks versus a 98% target mix for the chosen horizon. Your recorded account holdings include VTI $60,000, VWO $22,000, SCHD $20,000, and SCHP $18,000. The plan notes rebuilding your emergency reserve and paying the $3,500 credit card before adding to retirement, and suggests you could add up to $7,500 to your 401(k) or $4,500 to a Roth IRA within the limits noted."
+   },
+   "score": {
+    "building": "Your overall score is 26, driven down by liquidity and protection gaps.",
+    "plain": "The plan score is 26 out of 100, in the critical band. Savings and cash flow scored 0/25 and insurance and protection scored 4/20.",
+    "standard": "Your score is 26, with savings and cash flow 0/25, debt 8/10, investments 11/25, liquidity 4/20, and insurance 4/20. The plan highlights that adding $1M of umbrella cover would move the score from 26 to 31."
+   },
+   "assumptions": {
+    "building": "The projection relies on a set of specific assumptions about income, returns, and timing.",
+    "plain": "The plan assumes you retire at 58 and the plan runs to age 91. It assumes prices rise 3% a year and investments grow 7.76% a year.",
+    "standard": "Key assumptions include Michael retires at 58, the plan runs to age 91, prices rise 3% annually, investments grow 7.76% annually, salary of $180,000 continues until 2047, and Social Security starts in 2056. The plan also assumes a $3,500 annual vacation and a $550,000 home purchase in 2027."
+   }
+  },
+  "moves": {
+   "m0": {
+    "title": "Get an umbrella quote",
+    "why": "The plan flags no umbrella cover while recommending $1,000,000 to improve your protection score.",
+    "steps": [
+     "Search for umbrella insurance quotes online or call your current insurer.",
+     "Ask for a $1,000,000 policy option to compare cost and coverage.",
+     "Compare premiums to your monthly budget before deciding."
+    ],
+    "quiz": {
+     "q": "Why does the plan suggest an umbrella policy?",
+     "options": [
+      "To meet the recommended $1,000,000 liability shield",
+      "To replace your life insurance entirely",
+      "To increase your investable assets"
+     ],
+     "correct": 0,
+     "explain": "The plan recommends $1,000,000 of umbrella liability cover because you currently have none and it would improve protection."
+    }
+   },
+   "m1": {
+    "title": "Review your withdrawal plan",
+    "why": "Lowering withdrawals to reach the sustainable band is shown to raise the plan score and protect longevity.",
+    "steps": [
+     "Open your retirement projection or account statements.",
+     "Check current withdrawal assumptions against the plan's sustainable band.",
+     "Consider how reducing withdrawals to $10,300 a year fits your budget."
+    ],
+    "quiz": {
+     "q": "What withdrawal level does the plan say reaches the sustainable band?",
+     "options": [
+      "$10,300/year",
+      "$20,231/year",
+      "$59,613/year"
+     ],
+     "correct": 0,
+     "explain": "The plan states cutting withdrawals to $10,300/year reaches the sustainable band."
+    }
+   },
+   "m2": {
+    "title": "Compare your stock mix",
+    "why": "The plan recommends raising growth allocation toward the glide to match your Growth profile and improve the score.",
+    "steps": [
+     "Pull your current account allocation from statements.",
+     "Compare your 59% stock mix to the 67% target in the plan.",
+     "If you decide to adjust, move toward the glide within your accounts."
+    ],
+    "quiz": {
+     "q": "What stock mix target does the plan set for your Growth profile?",
+     "options": [
+      "67% stocks",
+      "59% stocks",
+      "98% stocks"
+     ],
+     "correct": 0,
+     "explain": "The plan's target mix for Growth is 67% stocks, while your current mix is 59%."
+    }
+   }
+  }
+ },
+ "generatedBy": "model",
+ "rejected": 0,
+ "hash": "ff677cfd958e1e40"
+}
