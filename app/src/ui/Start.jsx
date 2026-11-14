@@ -2,7 +2,7 @@
 // that sets the starting level and teaches the zoom once.
 import { useEffect, useRef, useState } from "react";
 import { api } from "../api.js";
-import { speak, stopSpeaking } from "../audio.js";
+import { sfx, speak, stopSpeaking } from "../audio.js";
 import { PROFILES, useStore } from "../store.js";
 
 export function go(path) {
@@ -242,14 +242,13 @@ export function Calibration() {
   };
   const afterEasy = (easy) => {
     setEasy(easy);
-    if (easy || simple) return finishAll();
-    setLevel(3);
-    setTutorial("enter");
-    setStep("tutorial");
+    sfx("ding");
+    finishAll();
   };
   const answer = (k, v) => {
     const next = { ...a, [k]: v };
     setA(next);
+    sfx("pop");
     if (k === "familiar") setStep("prefer");
     else if (k === "prefer") setStep("figures");
     else if (k === "figures") {
@@ -261,7 +260,7 @@ export function Calibration() {
   return (
     <div className={`calib ${step === "tutorial" ? "tutorial" : ""}`}>
       {step === "tutorial" && tutorial === "enter" && <div className="ghost-hand" aria-hidden="true" />}
-      <div className="glass calib-card" role="dialog" aria-label="Getting started">
+      <div className="calib-card" role="dialog" aria-label="Getting started">
         <p className="calib-q">{prompt}</p>
         {step === "who" && (
           <div className="options">

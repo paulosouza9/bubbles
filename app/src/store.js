@@ -94,8 +94,10 @@ export const useStore = create((set, get) => ({
       family: id,
       via,
       ...base,
-      focus: null,
+      focus: base.journeyDone ? "steps" : plan.order[0],
       level: 3,
+      fact: null,
+      monthTab: "missions",
       journeyIndex: 0,
       chat: { open: false, messages: [], quote: null, pending: false },
       phase: base.journeyDone ? "cloud" : "forming",
@@ -139,24 +141,79 @@ export const useStore = create((set, get) => ({
   setPhase(phase) {
     set({ phase });
   },
+  // One bubble at a time. Each bubble is its own little world with three zoom stops:
+  // 3 outside (one sentence), 2 inside (explained, with its toy), 1 deep (the figures).
+  flat() {
+    const s = get();
+    return s.easy || s.simple;
+  },
+  seq() {
+    const s = get();
+    const base = [...s.plan.order, ...s.plan.bubbles.map((b) => b.id).filter((id) => !s.plan.order.includes(id))];
+    return s.flat() ? base : [...base, "steps"];
+  },
+  bubble(id) {
+    const s = get();
+    if (id !== "steps") return s.plan?.bubbles.find((b) => b.id === id);
+    return {
+      id: "steps",
+      title: "Your next steps",
+      status: "neutral",
+      building: `Three missions for month ${s.missions.month}, straight from your plan.`,
+      floor: { plain: "", standard: "" },
+      mustKnow: [{ text: "Nothing is decided here. Every mission opens its decision card first.", source: "General" }],
+      desks: [],
+      analysis: [],
+      miniapp: { template: "steps", data: {} },
+    };
+  },
+  go(dir) {
+    const s = get();
+    const seq = s.seq();
+    const i = Math.max(0, Math.min(seq.length - 1, seq.indexOf(s.focus) + dir));
+    get().jump(seq[i]);
+  },
+  jump(id, level = 3) {
+    const s = get();
+    stopSpeaking();
+    const last = id === "steps" || id === s.plan.order.at(-1);
+    set({ focus: id, level, fact: null, journeyDone: s.journeyDone || last, phase: s.phase === "journey" && last ? "cloud" : s.phase });
+    get().logView();
+  },
+  setFact(fact) {
+    set({ fact });
+  },
+  setMonthTab(monthTab) {
+    stopSpeaking();
+    set({ monthTab });
+  },
+  openMonth() {
+    const s = get();
+    if (s.flat()) return set({ phase: "month" });
+    set({ focus: "steps", level: 2, monthTab: "podcast", journeyDone: true, phase: "cloud" });
+  },
   enter(id) {
     const p = PROFILES[get().profile().kind];
-    set({ focus: id, level: p.enter });
+    set({ focus: id, level: id === "steps" ? 2 : p.enter, fact: null });
     get().logView();
   },
   setLevel(level) {
     const s = get();
     let focus = s.focus;
+    if (!s.flat()) {
+      level = Math.min(3, level);
+      if (focus === "steps") level = Math.max(2, level);
+    }
     if (level <= 2 && !focus) focus = s.currentMission()?.bubbleId || s.plan.order[0];
     if (level >= 3) stopSpeaking();
-    set({ level, focus: level >= 3 && s.phase !== "journey" ? focus : focus });
+    set({ level, focus, fact: null });
     if (level <= 2) get().logView();
   },
   back() {
     const s = get();
     if (s.level === 1) get().setLevel(2);
-    else if (s.level === 2 && s.phase !== "journey") get().setLevel(3);
-    else if (s.level === 3) get().setLevel(4);
+    else if (s.level === 2 && (s.phase !== "journey" || !s.flat())) get().setLevel(3);
+    else if (s.level === 3 && s.flat()) get().setLevel(4);
   },
   // "Simpler" and "More detail" move through wording first, then through floors.
   simpler() {
@@ -168,7 +225,7 @@ export const useStore = create((set, get) => ({
       set({ profiles: { ...s.profiles, [s.person]: { ...pr, style: "plain", simplerCount: count, kind: count >= 2 && pr.kind !== "action" ? "novice" : pr.kind } } });
       return get().logView();
     }
-    if (s.level === 2 && s.phase !== "journey") return get().setLevel(3);
+    if (s.level === 2 && (s.phase !== "journey" || !s.flat())) return get().setLevel(3);
     if (s.level === 3) return get().setLevel(4);
   },
   deeper() {
@@ -197,7 +254,7 @@ export const useStore = create((set, get) => ({
   startJourney() {
     const s = get();
     const first = s.plan.order[0];
-    set({ phase: "journey", journeyIndex: 0, focus: first, level: PROFILES[s.profile().kind].enter });
+    set({ phase: "journey", journeyIndex: 0, focus: first, fact: null, level: s.flat() ? PROFILES[s.profile().kind].enter : 3 });
     get().logView();
   },
   journeyNext() {
@@ -218,7 +275,8 @@ export const useStore = create((set, get) => ({
   },
   skipJourney() {
     stopSpeaking();
-    set({ phase: "cloud", journeyDone: true, focus: null, level: 3 });
+    const s = get();
+    set({ phase: "cloud", journeyDone: true, focus: s.flat() ? null : "steps", level: 3 });
   },
 
   // ---- missions ----
@@ -255,6 +313,8 @@ export const useStore = create((set, get) => ({
     set({ decision: null });
   },
   setMissionsOpen(open) {
+    const s = get();
+    if (open && !s.flat()) return set({ focus: "steps", level: 2, monthTab: "missions", journeyDone: true, phase: "cloud" });
     set({ missionsOpen: open });
   },
   startNextMonth(ids) {
@@ -267,8 +327,9 @@ export const useStore = create((set, get) => ({
       },
       day: 0,
       phase: "cloud",
-      level: 3,
-      focus: null,
+      level: s.easy || s.simple ? 3 : 2,
+      focus: s.easy || s.simple ? null : "steps",
+      monthTab: "missions",
     }));
     get().log({ type: "month_start", missions: ids });
   },

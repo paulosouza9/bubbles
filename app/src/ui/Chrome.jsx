@@ -18,9 +18,9 @@ export function TopBar() {
   const journeyDone = useStore((s) => s.journeyDone);
   const { setLevel, back, setEasy, setMuted, setPerson, setProfile, setPhase, leave, reset, setDay, showToast, startJourney } = useStore.getState();
   const [menu, setMenu] = useState(false);
-  const b = plan.bubbles.find((x) => x.id === focus);
+  const b = focus ? useStore.getState().bubble(focus) : null;
   const inStage = phase === "cloud" || phase === "journey";
-  const canBack = inStage && (level === 1 || (level === 2 && phase !== "journey"));
+  const canBack = inStage && level < 3;
   const quick = useStore((s) => s.activeMissions().find((m) => s.missions.status[m.id] !== "done"));
 
   const day3 = () => {
@@ -52,7 +52,7 @@ export function TopBar() {
                 ‹ Back
               </button>
             )}
-            <button className="crumb" onClick={() => phase !== "journey" && setLevel(3)} disabled={phase === "journey"}>
+            <button className="crumb" onClick={() => setLevel(3)}>
               {plan.label}'s money
             </button>
             {level <= 2 && b && (
@@ -112,7 +112,7 @@ export function TopBar() {
                 <button role="menuitem" onClick={day3}>
                   Day 3: play the voice note
                 </button>
-                <button role="menuitem" onClick={() => { setMenu(false); setPhase("month"); }}>
+                <button role="menuitem" onClick={() => { setMenu(false); useStore.getState().openMonth(); }}>
                   Month end: review, podcast, check-in
                 </button>
               </>

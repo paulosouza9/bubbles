@@ -1,0 +1,557 @@
+/* The one-bubble-at-a-time experience. No cards: the bubble is the container. */
+
+/* ---- Text that floats in the 3D scene, next to the toys ---------------------------- */
+.t3 {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  white-space: nowrap;
+  font-size: clamp(11px, 1.75vmin, 16px);
+  line-height: 1.25;
+  color: var(--ink);
+  user-select: none;
+  text-shadow: 0 0 8px #fff, 0 0 8px #fff;
+  animation: rise 0.4s both;
+}
+.t3 b {
+  font-weight: 650;
+  display: block;
+}
+.t3 small {
+  font-size: 0.82em;
+  color: var(--grey);
+  display: block;
+}
+.t3.small {
+  font-size: clamp(10.5px, 1.5vmin, 14px);
+  color: var(--grey);
+  white-space: normal;
+  width: max-content;
+  max-width: min(74vw, 78vmin);
+}
+.t3.small b {
+  color: var(--ink);
+  display: inline;
+}
+.t3.left {
+  align-items: flex-start;
+  text-align: left;
+  transform: translateX(50%);
+}
+.t3.right {
+  align-items: flex-end;
+  text-align: right;
+  transform: translateX(-50%);
+}
+.t3.on b,
+.t3.on {
+  color: var(--blue);
+}
+.t3.bad,
+.t3.bad small {
+  color: #c4271b;
+}
+.t3.verdict {
+  white-space: normal;
+  width: max-content;
+  max-width: min(84vw, 80vmin);
+  padding: 0.5em 1.1em;
+  border-radius: 999px;
+  text-shadow: none;
+  font-size: clamp(12px, 1.9vmin, 17px);
+}
+.t3.verdict b {
+  display: inline;
+}
+.t3.verdict.bad {
+  background: #fff1f0;
+  color: #b3261e;
+}
+.t3.verdict.good {
+  background: #eef9f1;
+  color: #1e7b3c;
+}
+.t3.huge {
+  font-size: clamp(34px, 8.5vmin, 88px);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+.t3.huge small {
+  font-size: 0.16em;
+  font-weight: 500;
+  letter-spacing: 0;
+  margin-top: 0.4em;
+}
+.t3 .huge-inline {
+  font-size: 4.2em;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+.t3 .big-inline {
+  font-size: 1.9em;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+.t3.onball {
+  color: #fff;
+  font-weight: 700;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+}
+.t3.fact span {
+  white-space: normal;
+  font-weight: 650;
+  font-size: 0.95em;
+  letter-spacing: -0.01em;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.t3.fact.on span {
+  color: var(--blue);
+}
+.t3.mission-t {
+  max-width: min(30vw, 26vmin);
+}
+.t3.mission-t b {
+  display: block;
+}
+.t3 .kind {
+  color: var(--blue);
+  font-weight: 650;
+  font-size: 0.86em;
+}
+
+/* ---- Outside: the bubble with its one sentence --------------------------------------- */
+.b-label.big {
+  width: min(46vmin, 440px);
+  font-size: clamp(18px, 3.3vmin, 32px);
+}
+.b-label.big .b-sub {
+  font-size: 0.64em;
+  line-height: 1.3;
+  -webkit-line-clamp: 5;
+  margin-top: 0.5em;
+}
+.b-label.big .b-step {
+  font-size: 0.5em;
+}
+.stage.deep {
+  display: block;
+  padding: 0;
+}
+.outside {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45rem;
+  animation: rise 0.5s 0.6s both;
+  pointer-events: none !important;
+}
+.outside > * {
+  pointer-events: auto;
+}
+.outside .mute {
+  text-shadow: 0 0 10px #fff, 0 0 10px #fff;
+}
+
+/* ---- The row of dots (one per bubble) and the arrows ----------------------------------- */
+.seq {
+  position: fixed;
+  top: calc(var(--top) + 2px);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 7px;
+  align-items: center;
+  z-index: 14;
+  padding: 6px 4px;
+}
+.seq button {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: 0;
+  padding: 0;
+  background: var(--c, #8e8e93);
+  opacity: 0.35;
+  transition: all 0.3s cubic-bezier(0.3, 1.5, 0.5, 1);
+}
+.seq button.now {
+  opacity: 1;
+  transform: scale(1.7);
+}
+.seq button:hover {
+  opacity: 0.8;
+}
+.nav-arrow {
+  position: fixed;
+  top: 50%;
+  width: 3rem;
+  height: 3rem;
+  margin-top: -1.5rem;
+  border-radius: 50%;
+  font-size: 1.5rem;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+  z-index: 18;
+  transition: transform 0.2s cubic-bezier(0.3, 1.5, 0.5, 1);
+}
+.nav-arrow:hover {
+  transform: scale(1.1);
+}
+.nav-arrow.prev {
+  left: 14px;
+}
+.nav-arrow.next {
+  right: 14px;
+}
+.zoomer {
+  position: fixed;
+  top: calc(var(--top) + 26px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 14;
+  background: rgba(236, 236, 240, 0.8);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+.zoomer button {
+  padding: 0.32rem 0.95rem;
+}
+
+/* ---- Inside: the bubble is the whole screen -------------------------------------------- */
+.inside {
+  position: absolute;
+  inset: 0;
+  padding-top: 64px !important;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none !important;
+  padding: 26px 16px 4px;
+  animation: rise 0.5s 0.25s both;
+}
+.inside > * {
+  pointer-events: auto;
+}
+.in-head {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+}
+.in-head h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: clamp(1.1rem, 2.6vmin, 1.5rem);
+}
+.in-line {
+  margin-top: 0.6rem;
+  max-width: min(60ch, 92vw);
+  text-align: center;
+  font-size: clamp(0.92rem, 1.9vmin, 1.08rem);
+  line-height: 1.42;
+  color: #2c2c2e;
+  text-shadow: 0 0 12px #fff, 0 0 12px #fff;
+  max-height: 22vh;
+  overflow-y: auto;
+}
+.in-line.karaoke {
+  font-size: clamp(1.15rem, 3.3vmin, 1.9rem);
+  font-weight: 650;
+  letter-spacing: -0.025em;
+  line-height: 1.2;
+  color: var(--ink);
+  max-width: min(34ch, 92vw);
+  animation: rise 0.35s both;
+}
+.in-line.small-line {
+  font-weight: 600;
+}
+.in-dots {
+  display: flex;
+  gap: 4px;
+  margin-top: 0.5rem;
+}
+.in-dots i {
+  width: 16px;
+  height: 3px;
+  border-radius: 2px;
+  background: #d8d8de;
+}
+.in-dots i.done {
+  background: var(--ink);
+}
+.in-dots i.now {
+  background: var(--blue);
+}
+.in-free {
+  flex: 1;
+  min-height: 0;
+  width: min(640px, 100%);
+  overflow-y: auto;
+  margin-top: 0.8rem;
+  display: flex;
+  flex-direction: column;
+}
+.in-free.low {
+  justify-content: flex-end;
+}
+.in-free.bare .mini,
+.inside .podcast .pod-line {
+  background: none;
+  border: 0;
+  box-shadow: none;
+  padding-left: 0;
+  padding-right: 0;
+}
+.inside .podcast .pod-top {
+  display: none;
+}
+.inside .podcast .pod-line {
+  text-align: center;
+  font-size: clamp(1.05rem, 2.6vmin, 1.5rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  min-height: 5.5rem;
+  text-shadow: 0 0 12px #fff, 0 0 12px #fff;
+}
+.inside .pod-chapters {
+  justify-content: center;
+}
+.inside .fine {
+  text-align: center;
+}
+.inside .checkin .bubble-msg {
+  font-size: 1.02rem;
+}
+.inside .pick,
+.inside .checkin-input {
+  border-radius: 999px;
+}
+.in-bottom {
+  margin-top: auto;
+  width: min(760px, 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding-top: 0.4rem;
+}
+.inside.steps.tab-podcast .in-bottom,
+.inside.steps.tab-next .in-bottom {
+  margin-top: 0;
+}
+.in-ctl {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.45rem;
+}
+.in-do {
+  font-size: 0.9rem;
+  text-align: center;
+  text-shadow: 0 0 10px #fff, 0 0 10px #fff;
+}
+.must-line {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+  font-size: 0.8rem;
+  line-height: 1.38;
+  color: #3a3a3c;
+  max-width: min(74ch, 100%);
+  text-shadow: 0 0 10px #fff, 0 0 10px #fff;
+}
+.must-line .i {
+  display: inline-grid;
+  place-items: center;
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 50%;
+  border: 1.5px solid var(--ink);
+  font-size: 0.68rem;
+  font-weight: 700;
+  font-family: Georgia, serif;
+  font-style: italic;
+  flex: none;
+  margin-top: 0.05rem;
+}
+.must-line .link {
+  margin-left: 0.4rem;
+  font-size: 0.78rem;
+}
+.center {
+  text-align: center;
+}
+.fact-read {
+  margin-top: 0.7rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.15rem;
+  max-width: min(60ch, 92vw);
+  min-height: 5.2rem;
+  animation: rise 0.3s both;
+  text-shadow: 0 0 12px #fff, 0 0 12px #fff;
+}
+.fact-label {
+  font-size: 0.95rem;
+  color: var(--grey);
+}
+.fact-value {
+  font-size: clamp(1.4rem, 4vmin, 2.4rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+.fact-note {
+  font-size: 0.8rem;
+  color: var(--faint);
+}
+
+/* ---- Full-screen bubbles for reading and deciding ----------------------------------------- */
+.bubble-screen,
+.app.deep .modal-wrap {
+  position: fixed;
+  inset: 0;
+  z-index: 66;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  background: radial-gradient(circle at 50% 42%, rgba(255, 255, 255, 0.985) 0%, rgba(255, 255, 255, 0.95) 48%, rgba(238, 243, 255, 0.93) 100%);
+  -webkit-backdrop-filter: blur(22px) saturate(160%);
+  backdrop-filter: blur(22px) saturate(160%);
+  animation: bubble-in 0.6s cubic-bezier(0.25, 0.9, 0.3, 1) both;
+  pointer-events: auto !important;
+}
+@keyframes bubble-in {
+  from {
+    clip-path: circle(0% at 50% 55%);
+  }
+  to {
+    clip-path: circle(150% at 50% 55%);
+  }
+}
+.bs-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 2;
+}
+.bs-col {
+  width: min(680px, calc(100vw - 32px));
+  max-height: calc(100vh - 40px);
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 1rem 0;
+}
+.bs-body {
+  overflow-y: auto;
+  font-size: 1rem;
+  line-height: 1.5;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+.app.deep .modal.glass {
+  background: none;
+  border: 0;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  width: min(700px, calc(100vw - 28px));
+  max-height: calc(100vh - 16px);
+  animation: rise 0.5s 0.15s both;
+}
+.app.deep .modal .modal-foot {
+  border-top: 0;
+  justify-content: center;
+}
+.app.deep .quiz {
+  background: none;
+  padding: 0;
+}
+.app.deep .quiz-opt {
+  border-radius: 999px;
+  padding: 0.7rem 1.1rem;
+  transition: transform 0.2s cubic-bezier(0.3, 1.5, 0.5, 1);
+}
+.app.deep .quiz-opt:hover {
+  transform: scale(1.02);
+}
+.app.deep .quiz-opt.right {
+  animation: yes 0.5s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+@keyframes yes {
+  40% {
+    transform: scale(1.06);
+  }
+}
+.app.deep .must {
+  border: 0;
+  background: none;
+  padding: 0;
+}
+
+/* ---- Calibration floats over the first bubble --------------------------------------------- */
+.app.deep .calib {
+  bottom: auto;
+  top: 50%;
+  transform: translateY(-50%);
+}
+.calib-card:not(.glass) {
+  text-shadow: 0 0 14px #fff, 0 0 14px #fff;
+}
+.calib-card:not(.glass) .calib-q {
+  font-size: clamp(1.3rem, 3.4vmin, 2rem);
+  max-width: 22ch;
+  margin-left: auto;
+  margin-right: auto;
+}
+.calib-card:not(.glass) .btn {
+  box-shadow: 0 6px 18px rgba(29, 43, 79, 0.12);
+  transition: transform 0.2s cubic-bezier(0.3, 1.5, 0.5, 1);
+}
+.calib-card:not(.glass) .btn:hover {
+  transform: scale(1.06);
+}
+
+/* ---- The chat becomes loose bubbles, not a sheet ------------------------------------------- */
+.app.deep .chat-sheet.glass {
+  background: linear-gradient(rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.88) 22%);
+  border: 0;
+  box-shadow: none;
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  -webkit-mask-image: linear-gradient(transparent, #000 14%);
+  mask-image: linear-gradient(transparent, #000 14%);
+  padding-top: 1.2rem;
+}
+
+@media (max-width: 860px) {
+  .nav-arrow.next {
+    right: 14px;
+  }
+  .nav-arrow {
+    top: auto;
+    bottom: calc(var(--chat) + 58px);
+    width: 2.6rem;
+    height: 2.6rem;
+  }
+
+}

@@ -189,3 +189,31 @@ export function listen({ serverStt, onText, onError, onState }) {
   onError?.(new Error("This browser cannot listen. Please type instead."));
   return { stop: () => {} };
 }
+
+// ---- Tiny sound effects (synthesised, no files). They follow the voice mute switch. ----
+let actx = null;
+export function sfx(kind = "pop") {
+  if (voice.muted) return;
+  try {
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    const t = actx.currentTime;
+    const notes = kind === "ding" ? [[660, 990, 0.18], [990, 1320, 0.22]] : kind === "pop" ? [[440, 150, 0.11]] : kind === "whoosh" ? [[180, 520, 0.25]] : [[560, 560, 0.04]];
+    notes.forEach(([f1, f2, d], i) => {
+      const o = actx.createOscillator();
+      const g = actx.createGain();
+      const at = t + i * 0.09;
+      o.type = "sine";
+      o.frequency.setValueAtTime(f1, at);
+      o.frequency.exponentialRampToValueAtTime(f2, at + d);
+      g.gain.setValueAtTime(0.0001, at);
+      g.gain.exponentialRampToValueAtTime(0.11, at + 0.012);
+      g.gain.exponentialRampToValueAtTime(0.0001, at + d);
+      o.connect(g).connect(actx.destination);
+      o.start(at);
+      o.stop(at + d + 0.02);
+    });
+    navigator.vibrate?.(kind === "ding" ? [12, 30, 18] : 8);
+  } catch {
+    /* sound is a nicety */
+  }
+}

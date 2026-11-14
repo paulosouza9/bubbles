@@ -136,7 +136,7 @@ export function MissionsPanel() {
           className="btn"
           onClick={() => {
             setMissionsOpen(false);
-            setPhase("month");
+            useStore.getState().openMonth();
           }}
         >
           Go to the month-end review

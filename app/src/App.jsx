@@ -5,7 +5,7 @@ import { AskPopover, ChatBar } from "./ui/Chat.jsx";
 import { HumanModal, Toast, TopBar } from "./ui/Chrome.jsx";
 import { DecisionCard, MissionsPanel } from "./ui/Missions.jsx";
 import { Month } from "./ui/Month.jsx";
-import { Stage } from "./ui/Panels.jsx";
+import { Stage } from "./ui/Deep.jsx";
 import { Calibration, Forming, Landing } from "./ui/Start.jsx";
 
 const World3D = lazy(() => import("./scene/World3D.jsx"));

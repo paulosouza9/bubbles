@@ -8,6 +8,7 @@ import { speak, speakQueue, stopSpeaking, voice } from "../audio.js";
 import { ScoreRing } from "../miniapps/index.jsx";
 import { useStore } from "../store.js";
 import { MicButton } from "./Chat.jsx";
+import { BubbleScreen } from "./Deep.jsx";
 import { MissionRow, Ring, useMissions } from "./Missions.jsx";
 
 function nextIds(s) {
@@ -19,7 +20,7 @@ function nextIds(s) {
   return [...carry, ...moves, ...under].slice(0, 3);
 }
 
-function Podcast({ onDone }) {
+export function Podcast({ onDone }) {
   const family = useStore((s) => s.family);
   const names = useStore((s) => s.plan.label);
   const month = useStore((s) => s.missions.month);
@@ -140,7 +141,7 @@ function Podcast({ onDone }) {
   );
 }
 
-function Checkin({ onDone }) {
+export function Checkin({ onDone }) {
   const family = useStore((s) => s.family);
   const person = useStore((s) => s.person);
   const { list } = useMissions();
@@ -230,7 +231,7 @@ function Checkin({ onDone }) {
   );
 }
 
-function Picker() {
+export function Picker() {
   const pool = useStore(useShallow((s) => s.plan.missionPool.filter((m) => s.missions.status[m.id] !== "done")));
   const suggested = useStore(useShallow((s) => nextIds(s)));
   const month = useStore((s) => s.missions.month);
@@ -383,6 +384,107 @@ export function Month() {
           </footer>
         )}
       </section>
+    </div>
+  );
+}
+
+// Inside the last bubble: this month's missions around the score ring, and the month-end
+// review as a podcast, a check-in and the choice of next month's missions.
+export function StepsInside() {
+  const tab = useStore((s) => s.monthTab);
+  const setTab = useStore((s) => s.setMonthTab);
+  const plan = useStore((s) => s.plan);
+  const { list, statuses, month } = useMissions();
+  const proj = useStore((s) => s.projected().score);
+  const asked = useStore((s) => s.asked);
+  const notes = useStore((s) => s.notes);
+  const [notesOpen, setNotesOpen] = useState(false);
+  const done = statuses.filter((s) => s === "done").length;
+  const questions = Object.entries(asked).flatMap(([bid, qs]) => qs.filter((q) => q.month === month).map((q) => ({ ...q, title: plan.bubbles.find((b) => b.id === bid)?.title })));
+  const tabs = [
+    ["missions", "Missions"],
+    ["podcast", "Listen"],
+    ["checkin", "Check-in"],
+    ["next", "Next month"],
+  ];
+  return (
+    <div className={`inside steps tab-${tab}`}>
+      <header className="in-head">
+        <h2>Month {month}</h2>
+        <div className="seg" role="tablist">
+          {tabs.map(([v, label]) => (
+            <button key={v} role="tab" aria-selected={tab === v} className={tab === v ? "on" : ""} onClick={() => setTab(v)}>
+              {label}
+            </button>
+          ))}
+        </div>
+      </header>
+      {tab === "missions" && (
+        <p className="in-line small-line">
+          {done === list.length && list.length ? "You closed the ring." : `${done} of ${list.length} done.`} Tap a mission to open it.
+        </p>
+      )}
+      {tab === "podcast" && (
+        <div className="in-free low">
+          <Podcast onDone={() => setTab("checkin")} />
+        </div>
+      )}
+      {tab === "checkin" && (
+        <div className="in-free">
+          <Checkin onDone={() => {}} />
+        </div>
+      )}
+      {tab === "next" && (
+        <div className="in-free">
+          <Picker />
+        </div>
+      )}
+      <div className="in-bottom">
+        {tab === "missions" && (
+          <>
+            <p className="fine center">
+              Published score {plan.score.value}.{proj !== plan.score.value ? ` Projected ${proj}. It becomes real when your next Sherpas update confirms what you did.` : " Complete a mission to see the projected score."} Missions you do not finish carry over.
+            </p>
+            <div className="in-ctl">
+              <button className="btn" onClick={() => setNotesOpen(true)}>
+                What I noted this month
+              </button>
+              <button className="btn primary" onClick={() => setTab("podcast")}>
+                Month-end review ›
+              </button>
+            </div>
+          </>
+        )}
+        {tab === "checkin" && (
+          <div className="in-ctl">
+            <button className="btn primary" onClick={() => setTab("next")}>
+              Choose next month's missions ›
+            </button>
+          </div>
+        )}
+      </div>
+      {notesOpen && (
+        <BubbleScreen eyebrow={`Month ${month}`} title="What I noted this month" onClose={() => setNotesOpen(false)}>
+          {!questions.length && !notes.intakeChanges?.length && !notes.worries?.length && <p className="mute">Nothing yet. Your questions and anything you tell the check-in will appear here.</p>}
+          <ul className="analysis">
+            {questions.slice(-6).map((q, i) => (
+              <li key={`q${i}`}>
+                <span className="mute">You asked about {q.title}:</span> {q.q}
+              </li>
+            ))}
+            {notes.intakeChanges?.map((n, i) => (
+              <li key={`c${i}`}>
+                <span className="mute">For your advisor's firm, update the intake:</span> {n.text}
+              </li>
+            ))}
+            {notes.worries?.map((n, i) => (
+              <li key={`w${i}`}>
+                <span className="mute">On your mind:</span> {n.text}
+              </li>
+            ))}
+          </ul>
+        </BubbleScreen>
+      )}
     </div>
   );
 }

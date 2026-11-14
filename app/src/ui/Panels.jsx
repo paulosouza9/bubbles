@@ -10,6 +10,7 @@ import MiniApp from "../miniapps/index.jsx";
 import { useStore } from "../store.js";
 import { MissionChip } from "./Missions.jsx";
 
+
 export function Dot({ status }) {
   return <i className="dot" style={{ background: STATUS_COLOR[status] }} title={STATUS_WORD[status]} />;
 }
@@ -325,7 +326,7 @@ export function Elevator() {
   );
 }
 
-export function Stage() {
+export function FlatStage() {
   const plan = useStore((s) => s.plan);
   const level = useStore((s) => s.level);
   const focus = useStore((s) => s.focus);

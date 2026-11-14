@@ -1,46 +1,30 @@
-// The 3D world: liquid-glass bubbles on white, pastel light behind them, and a real camera
-// that travels between four fixed "floors" (city, building, floor, desk). All text and the
-// mini apps live in the HTML layer above this canvas, so they stay selectable and readable.
-import { Environment, Html, Lightformer, Line } from "@react-three/drei";
+// The 3D world. One bubble at a time: it forms from droplets in the middle of the screen,
+// you step inside it (the camera goes through the glass until the bubble fills the whole
+// screen), you play with its toy, you go deeper for the figures, and when you are done the
+// next bubble takes its place. Text stays in the HTML layer so it can be selected and read.
+import { Environment, Html, Lightformer } from "@react-three/drei";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { easing } from "maath";
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
+import { sfx } from "../audio.js";
 import { STATUS_COLOR } from "../format.js";
 import { computeLayout, DECOR } from "../layout.js";
 import { useStore } from "../store.js";
+import Toy, { bursts, FactOrbs } from "./Toys.jsx";
 
 const FOV = 35;
 const TAN = Math.tan((FOV * Math.PI) / 360);
-const formClock = { t: 0 };
-const hover = { id: null };
+const R = 2; // every plan bubble has the same size: each one is its own world
+const INSIDE = { 2: 0.62, 1: 0.5 }; // camera distance from the centre, in bubble radii
+const formClock = { t: 9 };
 
-function buildingDistance(layout, aspect) {
-  const dV = layout.halfH / TAN;
-  const dH = layout.halfW / (TAN * aspect);
-  return Math.max(dV, dH) * 1.16 + 0.8;
-}
-
-function useBackdropTexture() {
+function useCanvasTexture(draw, w = 256, h = 256) {
   return useMemo(() => {
     const c = document.createElement("canvas");
-    c.width = 1024;
-    c.height = 640;
-    const g = c.getContext("2d");
-    g.fillStyle = "#ffffff";
-    g.fillRect(0, 0, c.width, c.height);
-    const blob = (x, y, r, color) => {
-      const grd = g.createRadialGradient(x, y, 0, x, y, r);
-      grd.addColorStop(0, color);
-      grd.addColorStop(1, "rgba(255,255,255,0)");
-      g.fillStyle = grd;
-      g.fillRect(0, 0, c.width, c.height);
-    };
-    blob(260, 200, 300, "rgba(158,193,255,0.85)");
-    blob(760, 190, 280, "rgba(255,194,217,0.75)");
-    blob(330, 480, 270, "rgba(182,240,216,0.8)");
-    blob(740, 470, 260, "rgba(255,225,168,0.8)");
-    blob(520, 320, 200, "rgba(217,200,255,0.55)");
+    c.width = w;
+    c.height = h;
+    draw(c.getContext("2d"), w, h);
     const t = new THREE.CanvasTexture(c);
     t.colorSpace = THREE.SRGBColorSpace;
     return t;
@@ -48,11 +32,30 @@ function useBackdropTexture() {
 }
 
 function Backdrop() {
-  const tex = useBackdropTexture();
+  const tex = useCanvasTexture(
+    (g, w, h) => {
+      g.fillStyle = "#ffffff";
+      g.fillRect(0, 0, w, h);
+      const blob = (x, y, r, color) => {
+        const grd = g.createRadialGradient(x, y, 0, x, y, r);
+        grd.addColorStop(0, color);
+        grd.addColorStop(1, "rgba(255,255,255,0)");
+        g.fillStyle = grd;
+        g.fillRect(0, 0, w, h);
+      };
+      blob(260, 200, 300, "rgba(158,193,255,0.85)");
+      blob(760, 190, 280, "rgba(255,194,217,0.75)");
+      blob(330, 480, 270, "rgba(182,240,216,0.8)");
+      blob(740, 470, 260, "rgba(255,225,168,0.8)");
+      blob(520, 320, 200, "rgba(217,200,255,0.55)");
+    },
+    1024,
+    640,
+  );
   const ref = useRef();
   useFrame((st) => {
-    const t = st.clock.elapsedTime;
     if (useStore.getState().reduced) return;
+    const t = st.clock.elapsedTime;
     ref.current.position.x = Math.sin(t * 0.07) * 1.6;
     ref.current.position.y = Math.cos(t * 0.05) * 0.9;
   });
@@ -64,207 +67,179 @@ function Backdrop() {
   );
 }
 
-function Rig({ layout, decor }) {
-  const { camera, size } = useThree();
-  const look = useRef(new THREE.Vector3());
-  useFrame((_, dt) => {
-    const s = useStore.getState();
-    const aspect = size.width / size.height;
-    const d3 = buildingDistance(layout, aspect);
-    const b = !decor && s.focus ? layout.byId[s.focus] : null;
-    let p;
-    let l;
-    if (decor || s.level >= 3 || !b) {
-      const d = decor ? d3 * 1.05 : s.level === 4 ? d3 * 1.85 : d3;
-      const shift = decor && aspect > 1.2 ? -layout.halfW * 0.85 : 0;
-      const early = s.phase === "calibrate" || s.phase === "forming";
-      const lift = early ? -0.75 : s.level === 3 && !decor ? -0.5 : 0;
-      p = [shift, lift, early ? d * 1.12 : d];
-      l = [shift, lift, 0];
-    } else if (s.level === 2) {
-      const fill = aspect < 0.8 ? 0.7 : 0.9;
-      const d = Math.max(b.r / (TAN * fill), b.r / (TAN * aspect * 0.98));
-      p = [b.x, b.y, b.z + d];
-      l = [b.x, b.y, b.z];
-    } else {
-      p = [b.x, b.y, b.z + b.r * 0.3];
-      l = [b.x, b.y, b.z - b.r];
-    }
-    p[2] -= s.nudge * 1.4;
-    easing.damp3(camera.position, p, s.reduced ? 0.0001 : 0.38, dt);
-    easing.damp3(look.current, l, s.reduced ? 0.0001 : 0.3, dt);
-    camera.lookAt(look.current);
-  });
-  return null;
+function Glass({ r }) {
+  return (
+    <meshPhysicalMaterial color="#ffffff" transmission={1} thickness={r * 0.9} roughness={0.03} ior={1.17} dispersion={3} clearcoat={1} clearcoatRoughness={0.06} iridescence={0.18} iridescenceIOR={1.2} envMapIntensity={0.85} toneMapped={false} />
+  );
 }
 
-function useShadowTexture() {
-  return useMemo(() => {
-    const c = document.createElement("canvas");
-    c.width = c.height = 256;
-    const g = c.getContext("2d");
+function Shadow({ r, hidden }) {
+  const tex = useCanvasTexture((g) => {
     const grd = g.createRadialGradient(128, 128, 40, 128, 128, 128);
     grd.addColorStop(0, "rgba(40,60,110,0.34)");
     grd.addColorStop(0.55, "rgba(40,60,110,0.12)");
     grd.addColorStop(1, "rgba(40,60,110,0)");
     g.fillStyle = grd;
     g.fillRect(0, 0, 256, 256);
-    return new THREE.CanvasTexture(c);
-  }, []);
-}
-
-function Glass({ r }) {
+  });
   return (
-    <meshPhysicalMaterial
-      color="#ffffff"
-      transmission={1}
-      thickness={r * 0.9}
-      roughness={0.03}
-      ior={1.17}
-      dispersion={3}
-      clearcoat={1}
-      clearcoatRoughness={0.06}
-      iridescence={0.18}
-      iridescenceIOR={1.2}
-      envMapIntensity={0.85}
-      toneMapped={false}
-    />
+    <mesh position={[0, -r * 0.16, -r * 0.5]} visible={!hidden}>
+      <planeGeometry args={[r * 2.7, r * 2.7]} />
+      <meshBasicMaterial map={tex} transparent depthWrite={false} toneMapped={false} />
+    </mesh>
   );
 }
 
-function Bubble({ node, bubble, index, labelPx, labelFactor }) {
-  const group = useRef();
-  const inner = useRef();
-  const ring = useRef();
-  const shadow = useRef();
-  const [hovered, setHovered] = useState(false);
-  const phase = useStore((s) => s.phase);
-  const level = useStore((s) => s.level);
-  const focus = useStore((s) => s.focus);
-  const tutorial = useStore((s) => s.tutorial);
-  const missionBubble = useStore((s) => (s.plan && s.journeyDone ? s.currentMission()?.bubbleId : null));
-  const clickable = bubble && level >= 3 && (phase === "cloud" || (phase === "calibrate" && tutorial === "enter"));
-  const isStep = bubble && missionBubble === node.id;
+// ---- Camera -----------------------------------------------------------------------------
 
-  useFrame((st, dt) => {
+function Rig({ layout }) {
+  const { camera, size } = useThree();
+  const look = useRef(new THREE.Vector3());
+  useFrame((_, dt) => {
     const s = useStore.getState();
-    const t = st.clock.elapsedTime;
-    const inside = s.level <= 2 && s.focus && s.plan;
-    const focused = s.focus === node.id;
-    let target = 1;
-    if (s.phase === "forming") {
-      const k = Math.min(1, Math.max(0, (formClock.t - 0.9 - index * 0.14) / 0.9));
-      target = k * k * (3 - 2 * k) || 0.0001;
-    } else if (inside && !focused) target = 0.0001;
-    else if (hovered && clickable) target = 1.05;
-    if (isStep && s.day >= 3 && s.level >= 3) target *= 0.86;
-    easing.damp3(group.current.scale, [target, target, target], s.reduced ? 0.0001 : inside ? 0.22 : 0.3, dt);
-    const float = inside || s.reduced ? 0 : 1;
-    group.current.position.set(node.x + Math.cos(t * 0.45 + index) * 0.045 * float, node.y + Math.sin(t * 0.6 + index * 1.7) * 0.07 * float, node.z);
-    if (inner.current) easing.damp(inner.current.material, "opacity", s.level === 1 && focused ? 0.55 : 0, 0.25, dt);
-    if (shadow.current) shadow.current.visible = !(s.level === 1 && focused);
-    if (ring.current) {
-      const pulse = 1 + Math.sin(t * 2.2) * 0.012;
-      ring.current.scale.set(pulse, pulse, pulse);
-      ring.current.visible = s.level >= 3 && s.phase === "cloud";
+    const aspect = size.width / size.height;
+    let p;
+    let l;
+    if (!s.plan) {
+      const d = (Math.max(layout.halfH / TAN, layout.halfW / (TAN * aspect)) * 1.16 + 0.8) * 1.05;
+      const shift = aspect > 1.2 ? -layout.halfW * 0.85 : 0;
+      p = [shift, 0, d];
+      l = [shift, 0, 0];
+    } else if (s.level >= 3 || s.phase === "forming" || s.phase === "calibrate") {
+      const fill = s.phase === "calibrate" ? 0.86 : s.phase === "forming" ? 0.5 : 0.62;
+      const d = Math.max(R / (TAN * fill), R / (TAN * aspect * 0.9));
+      const lift = s.phase === "forming" ? -0.9 : s.phase === "calibrate" ? 0 : -0.35;
+      p = [0, lift, d];
+      l = [0, lift, 0];
+    } else {
+      p = [0, 0, R * INSIDE[s.level]];
+      l = [0, 0, -R];
     }
+    p[2] -= s.nudge * 1.2;
+    easing.damp3(camera.position, p, s.reduced ? 0.0001 : 0.42, dt);
+    easing.damp3(look.current, l, s.reduced ? 0.0001 : 0.32, dt);
+    camera.lookAt(look.current);
   });
+  return null;
+}
 
-  const shadowTex = useShadowTexture();
-  const showLabel = bubble && level === 3 && (phase === "cloud" || phase === "calibrate");
-  const px = node.r * labelPx;
+// ---- Things that live inside the bubble -----------------------------------------------------
+
+function MicroBubbles({ visible }) {
+  const ref = useRef();
+  const count = 46;
+  const seeds = useMemo(() => Array.from({ length: count }, (_, i) => ({ x: Math.sin(i * 12.9898) * 1.5, y: ((i * 0.37) % 1) * 3 - 1.5, z: -0.3 - ((i * 0.61) % 1) * 1.3, s: 0.012 + ((i * 7) % 10) * 0.004, v: 0.04 + ((i * 3) % 7) * 0.012 })), []);
+  const d = useMemo(() => new THREE.Object3D(), []);
+  useFrame((st) => {
+    ref.current.visible = visible;
+    if (!visible) return;
+    const t = st.clock.elapsedTime;
+    seeds.forEach((b, i) => {
+      const y = ((b.y + t * b.v + 1.5) % 3) - 1.5;
+      d.position.set(b.x + Math.sin(t * 0.6 + i) * 0.05, y, b.z);
+      d.scale.setScalar(b.s);
+      d.updateMatrix();
+      ref.current.setMatrixAt(i, d.matrix);
+    });
+    ref.current.instanceMatrix.needsUpdate = true;
+  });
   return (
-    <group ref={group} position={[node.x, node.y, node.z]} scale={0.0001}>
-      <mesh
-        onClick={(e) => {
-          if (!clickable) return;
-          e.stopPropagation();
-          useStore.getState().enter(node.id);
-        }}
-        onPointerOver={(e) => {
-          if (!clickable) return;
-          e.stopPropagation();
-          setHovered(true);
-          hover.id = node.id;
-          document.body.style.cursor = "pointer";
-        }}
-        onPointerOut={() => {
-          setHovered(false);
-          if (hover.id === node.id) hover.id = null;
-          document.body.style.cursor = "";
-        }}
-      >
-        <sphereGeometry args={[node.r, 72, 72]} />
-        <Glass r={node.r} />
-      </mesh>
-      <mesh ref={shadow} position={[0, -node.r * 0.16, -node.r * 0.5]}>
-        <planeGeometry args={[node.r * 2.7, node.r * 2.7]} />
-        <meshBasicMaterial map={shadowTex} transparent depthWrite={false} toneMapped={false} />
-      </mesh>
-      <mesh ref={inner} scale={0.985}>
-        <sphereGeometry args={[node.r, 48, 48]} />
-        <meshBasicMaterial color="#ffffff" side={THREE.BackSide} transparent opacity={0} depthWrite={false} toneMapped={false} />
-      </mesh>
-      {isStep && (
-        <mesh ref={ring}>
-          <torusGeometry args={[node.r * 1.09, 0.022, 12, 120]} />
-          <meshBasicMaterial color="#0071E3" transparent opacity={0.75} toneMapped={false} />
-        </mesh>
-      )}
-      {showLabel && (
-        <Html center distanceFactor={labelFactor} zIndexRange={[4, 0]} style={{ pointerEvents: "none" }}>
-          <div className="b-label" style={{ width: px * 1.5, fontSize: Math.max(11.5, Math.min(17, px / 6.6)) }}>
-            <div className="b-title">
-              <i className="dot" style={{ background: STATUS_COLOR[bubble.status] }} />
-              {bubble.title}
-            </div>
-            {px > 70 && <div className="b-sub">{bubble.building}</div>}
-            {isStep && <div className="b-step">Your next step</div>}
-          </div>
-        </Html>
-      )}
+    <instancedMesh ref={ref} args={[null, null, count]} frustumCulled={false}>
+      <sphereGeometry args={[1, 16, 16]} />
+      <meshPhysicalMaterial color="#ffffff" transparent opacity={0.55} roughness={0.05} clearcoat={1} depthWrite={false} toneMapped={false} />
+    </instancedMesh>
+  );
+}
+
+function Interior({ bubble }) {
+  const level = useStore((s) => s.level);
+  const { size } = useThree();
+  const group = useRef();
+  const aspect = size.width / size.height;
+  const fit = Math.min(1, aspect / 1.3);
+  useFrame((_, dt) => {
+    const s = useStore.getState();
+    const unit = ((R * INSIDE[Math.min(2, Math.max(1, s.level))] * TAN) / 3.3) * fit;
+    easing.damp3(group.current.scale, [unit, unit, unit], s.reduced ? 0.0001 : 0.3, dt);
+    group.current.position.y = unit * 0.05;
+  });
+  return (
+    <group ref={group} scale={0.0001}>
+      {level === 2 && <Toy bubble={bubble} key={`toy-${bubble.id}`} />}
+      {level === 1 && <FactOrbs desks={bubble.desks} key={`facts-${bubble.id}`} />}
     </group>
   );
 }
 
-function Droplets({ layout }) {
+function Bursts() {
   const ref = useRef();
-  const count = 90;
+  const count = 220;
+  const parts = useRef([]);
+  const d = useMemo(() => new THREE.Object3D(), []);
+  const col = useMemo(() => new THREE.Color(), []);
+  useFrame((_, dt) => {
+    for (const b of bursts.queue.splice(0)) {
+      for (let i = 0; i < b.n; i++) {
+        const a = Math.random() * Math.PI * 2;
+        const e = Math.random() * Math.PI - Math.PI / 2;
+        const v = 0.25 + Math.random() * 0.45;
+        parts.current.push({ p: b.p.clone(), v: new THREE.Vector3(Math.cos(a) * Math.cos(e) * v, Math.sin(e) * v + 0.12, Math.sin(a) * Math.cos(e) * v * 0.4), life: 0.7 + Math.random() * 0.4, age: 0, color: Math.random() > 0.35 ? b.color : "#ffffff", s: 0.006 + Math.random() * 0.012 });
+      }
+    }
+    parts.current = parts.current.filter((p) => p.age < p.life).slice(-count);
+    for (let i = 0; i < count; i++) {
+      const p = parts.current[i];
+      if (!p) {
+        d.scale.setScalar(0);
+        d.updateMatrix();
+        ref.current.setMatrixAt(i, d.matrix);
+        continue;
+      }
+      p.age += dt;
+      p.v.y -= dt * 0.25;
+      p.p.addScaledVector(p.v, dt);
+      d.position.copy(p.p);
+      d.scale.setScalar(p.s * (1 - p.age / p.life));
+      d.updateMatrix();
+      ref.current.setMatrixAt(i, d.matrix);
+      ref.current.setColorAt(i, col.set(p.color));
+    }
+    ref.current.instanceMatrix.needsUpdate = true;
+    if (ref.current.instanceColor) ref.current.instanceColor.needsUpdate = true;
+  });
+  return (
+    <instancedMesh ref={ref} args={[null, null, count]} frustumCulled={false}>
+      <sphereGeometry args={[1, 10, 10]} />
+      <meshBasicMaterial toneMapped={false} />
+    </instancedMesh>
+  );
+}
+
+function Droplets() {
+  const ref = useRef();
+  const count = 70;
   const seeds = useMemo(
     () =>
       Array.from({ length: count }, (_, i) => {
-        const n = layout.nodes[i % layout.nodes.length];
         const a = i * 2.39996;
-        return {
-          sx: Math.sin(i * 12.9898) * 7,
-          sy: 7 + ((i * 7) % 11) * 0.35,
-          sz: Math.cos(i * 4.1) * 1.5,
-          tx: n.x + Math.cos(a) * n.r * 0.35,
-          ty: n.y + Math.sin(a) * n.r * 0.35,
-          tz: n.z,
-          delay: (i % 30) * 0.035,
-          size: 0.07 + ((i * 13) % 10) * 0.012,
-        };
+        return { sx: Math.cos(a) * (5 + (i % 5)), sy: Math.sin(a) * (4 + (i % 4)) + 1, sz: Math.cos(i * 4.1) * 1.5, tx: Math.cos(a) * 0.5, ty: Math.sin(a) * 0.5, delay: (i % 24) * 0.02, size: 0.06 + ((i * 13) % 10) * 0.012 };
       }),
-    [layout],
+    [],
   );
-  const dummy = useMemo(() => new THREE.Object3D(), []);
+  const d = useMemo(() => new THREE.Object3D(), []);
   useFrame((_, dt) => {
     const s = useStore.getState();
-    if (s.phase !== "forming") {
-      ref.current.visible = false;
-      return;
-    }
     formClock.t += s.reduced ? 10 : dt;
-    ref.current.visible = true;
-    seeds.forEach((d, i) => {
-      const k = Math.min(1, Math.max(0, (formClock.t - d.delay) / 1.5));
+    const on = s.plan && formClock.t < 1.9;
+    ref.current.visible = on;
+    if (!on) return;
+    seeds.forEach((q, i) => {
+      const k = Math.min(1, Math.max(0, (formClock.t - q.delay) / 1.1));
       const e = 1 - Math.pow(1 - k, 3);
-      dummy.position.set(d.sx + (d.tx - d.sx) * e, d.sy + (d.ty - d.sy) * e - Math.sin(k * Math.PI) * 0.8, d.sz + (d.tz - d.sz) * e);
-      const sc = d.size * (k < 0.85 ? 1 : Math.max(0, (1 - k) / 0.15));
-      dummy.scale.setScalar(Math.max(sc, 0.0001));
-      dummy.updateMatrix();
-      ref.current.setMatrixAt(i, dummy.matrix);
+      d.position.set(q.sx + (q.tx - q.sx) * e, q.sy + (q.ty - q.sy) * e, q.sz * (1 - e));
+      d.scale.setScalar(Math.max(0.0001, q.size * (k < 0.8 ? 1 : (1 - k) / 0.2)));
+      d.updateMatrix();
+      ref.current.setMatrixAt(i, d.matrix);
     });
     ref.current.instanceMatrix.needsUpdate = true;
   });
@@ -276,31 +251,126 @@ function Droplets({ layout }) {
   );
 }
 
-function Links({ layout, links }) {
+// ---- The bubble -----------------------------------------------------------------------------
+
+function PlanBubble({ id }) {
+  const group = useRef();
+  const inner = useRef();
+  const ring = useRef();
+  const [hovered, setHovered] = useState(false);
+  const bubble = useStore((s) => s.bubble(id).title) && useStore.getState().bubble(id);
+  const focus = useStore((s) => s.focus);
   const level = useStore((s) => s.level);
   const phase = useStore((s) => s.phase);
-  if (level !== 3 || phase !== "cloud") return null;
-  return links.map(([a, b]) => {
-    const A = layout.byId[a];
-    const B = layout.byId[b];
-    if (!A || !B) return null;
-    return <Line key={`${a}-${b}`} points={[[A.x, A.y, A.z - 0.2], [B.x, B.y, B.z - 0.2]]} color="#D3D8E2" lineWidth={1.1} dashed dashSize={0.14} gapSize={0.12} />;
+  const stepHere = useStore((s) => s.journeyDone && s.currentMission()?.bubbleId === id);
+  const active = focus === id;
+  const browsing = phase === "journey" || phase === "cloud";
+  const inside = active && browsing && level <= 2;
+
+  useFrame((st, dt) => {
+    const s = useStore.getState();
+    const t = st.clock.elapsedTime;
+    let target = 0.0001;
+    if (active && s.phase !== "month") {
+      const k = Math.min(1, Math.max(0, (formClock.t - 0.55) / 0.8));
+      target = Math.max(0.0001, k * k * (3 - 2 * k)) * (hovered && s.level === 3 ? 1.03 : 1);
+    }
+    easing.damp3(group.current.scale, [target, target, target], s.reduced ? 0.0001 : active ? 0.2 : 0.14, dt);
+    const float = inside || s.reduced ? 0 : 1;
+    group.current.position.set(Math.cos(t * 0.45) * 0.04 * float, Math.sin(t * 0.6) * 0.07 * float, 0);
+    easing.damp(inner.current.material, "opacity", inside ? 0.42 : 0, 0.25, dt);
+    if (ring.current) {
+      const pulse = 1 + Math.sin(t * 2.2) * 0.012;
+      ring.current.scale.set(pulse, pulse, pulse);
+      ring.current.visible = s.level === 3;
+    }
   });
+
+  const clickable = active && level === 3 && browsing;
+  return (
+    <group ref={group} scale={0.0001}>
+      <mesh
+        onClick={(e) => {
+          if (!clickable) return;
+          e.stopPropagation();
+          sfx("whoosh");
+          useStore.getState().enter(id);
+        }}
+        onPointerOver={() => {
+          if (!clickable) return;
+          setHovered(true);
+          document.body.style.cursor = "pointer";
+        }}
+        onPointerOut={() => {
+          setHovered(false);
+          document.body.style.cursor = "";
+        }}
+      >
+        <sphereGeometry args={[R, 80, 80]} />
+        <Glass r={R} />
+      </mesh>
+      <mesh ref={inner} scale={0.985}>
+        <sphereGeometry args={[R, 48, 48]} />
+        <meshBasicMaterial color="#ffffff" side={THREE.BackSide} transparent opacity={0} depthWrite={false} toneMapped={false} />
+      </mesh>
+      <Shadow r={R} hidden={inside} />
+      {stepHere && active && (
+        <mesh ref={ring}>
+          <torusGeometry args={[R * 1.07, 0.022, 12, 120]} />
+          <meshBasicMaterial color="#0071E3" transparent opacity={0.75} toneMapped={false} />
+        </mesh>
+      )}
+      {active && level === 3 && browsing && (
+        <Html center zIndexRange={[4, 0]} style={{ pointerEvents: "none" }}>
+          <div className="b-label big">
+            <div className="b-title">
+              {bubble.status !== "neutral" && <i className="dot" style={{ background: STATUS_COLOR[bubble.status] }} />}
+              {bubble.title}
+            </div>
+            <div className="b-sub" data-ask>
+              {bubble.building}
+            </div>
+            {stepHere && <div className="b-step">Your next step is in here</div>}
+          </div>
+        </Html>
+      )}
+      <MicroBubbles visible={inside} />
+      {inside && <Interior bubble={bubble} />}
+    </group>
+  );
+}
+
+function DecorBubble({ node, index }) {
+  const group = useRef();
+  useFrame((st, dt) => {
+    const t = st.clock.elapsedTime;
+    const float = useStore.getState().reduced ? 0 : 1;
+    easing.damp3(group.current.scale, [1, 1, 1], 0.3, dt);
+    group.current.position.set(node.x + Math.cos(t * 0.45 + index) * 0.045 * float, node.y + Math.sin(t * 0.6 + index * 1.7) * 0.07 * float, node.z);
+  });
+  return (
+    <group ref={group} scale={0.0001}>
+      <mesh>
+        <sphereGeometry args={[node.r, 64, 64]} />
+        <Glass r={node.r} />
+      </mesh>
+      <Shadow r={node.r} />
+    </group>
+  );
 }
 
 function Scene() {
   const plan = useStore((s) => s.plan);
+  const focus = useStore((s) => s.focus);
   const { size } = useThree();
-  const portrait = size.width / size.height < 0.85;
-  const layout = useMemo(() => computeLayout(plan ? plan.bubbles : DECOR, portrait), [plan, portrait]);
-  const d3 = buildingDistance(layout, size.width / size.height);
-  const labelFactor = 2 * TAN * d3;
-  const labelPx = size.height / (2 * TAN * d3);
-  const phase = useStore((s) => s.phase);
+  const layout = useMemo(() => computeLayout(DECOR, size.width / size.height < 0.85), [size.width < size.height * 0.85]);
+  const ids = useMemo(() => (plan ? [...plan.bubbles.map((b) => b.id), "steps"] : []), [plan]);
+  // Every time a new bubble takes the stage, it forms again from droplets.
   useEffect(() => {
-    if (phase === "forming") formClock.t = 0;
-  }, [phase, plan]);
-  const byId = plan ? Object.fromEntries(plan.bubbles.map((b) => [b.id, b])) : {};
+    if (!plan) return;
+    formClock.t = 0;
+    sfx("pop");
+  }, [focus, plan]);
   return (
     <>
       <color attach="background" args={["#ffffff"]} />
@@ -316,12 +386,11 @@ function Scene() {
         <Lightformer form="circle" intensity={2.2} color="#ffd6e6" position={[10, -1, 1]} scale={6} target={[0, 0, 0]} />
         <Lightformer form="circle" intensity={1.6} color="#dafbea" position={[2, -9, 3]} scale={6} target={[0, 0, 0]} />
       </Environment>
-      <Rig layout={layout} decor={!plan} />
-      {layout.nodes.map((n, i) => (
-        <Bubble key={`${plan?.family || "decor"}-${n.id}`} node={n} bubble={byId[n.id]} index={i} labelPx={labelPx} labelFactor={labelFactor} />
-      ))}
-      {plan && <Links layout={layout} links={plan.links} />}
-      {plan && <Droplets layout={layout} />}
+      <Rig layout={layout} />
+      {!plan && layout.nodes.map((n, i) => <DecorBubble key={n.id} node={n} index={i} />)}
+      {plan && ids.map((id) => <PlanBubble key={`${plan.family}-${id}`} id={id} />)}
+      {plan && <Droplets />}
+      <Bursts />
     </>
   );
 }
@@ -331,11 +400,11 @@ export default function World3D() {
   const pinch = useRef(null);
   const act = (dir) => {
     const s = useStore.getState();
-    if (!s.plan || (s.phase !== "cloud" && s.phase !== "journey")) return;
+    if (!s.plan || (s.phase !== "cloud" && s.phase !== "journey") || s.chat.open) return;
     if (dir > 0) {
-      if (s.level === 3 && hover.id) s.enter(hover.id);
-      else if (s.level > 1) s.setLevel(s.level - 1);
-    } else if (s.level < 4 && !(s.phase === "journey" && s.level >= 2)) s.setLevel(s.level + 1);
+      if (s.level === 3) s.enter(s.focus);
+      else if (s.level === 2) s.deeper();
+    } else if (s.level < 3) s.setLevel(s.level + 1);
   };
   return (
     <div
@@ -370,7 +439,7 @@ export default function World3D() {
         useStore.getState().setNudge(0);
       }}
     >
-      <Canvas flat dpr={[1, 1.75]} camera={{ fov: FOV, position: [0, 0, 26], near: 0.05, far: 120 }} gl={{ antialias: true, powerPreference: "high-performance" }}>
+      <Canvas flat dpr={[1, 1.75]} camera={{ fov: FOV, position: [0, 0, 26], near: 0.02, far: 120 }} gl={{ antialias: true, powerPreference: "high-performance" }}>
         <Scene />
       </Canvas>
     </div>
