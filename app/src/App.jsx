@@ -4,6 +4,7 @@ import { useStore } from "./store.js";
 import { AskPopover, ChatBar } from "./ui/Chat.jsx";
 import { HumanModal, Toast, TopBar } from "./ui/Chrome.jsx";
 import { DecisionCard, MissionsPanel } from "./ui/Missions.jsx";
+import { Celebration } from "./ui/Moments.jsx";
 import { Month } from "./ui/Month.jsx";
 import { Stage } from "./ui/Deep.jsx";
 import { Calibration, Forming, Landing } from "./ui/Start.jsx";
@@ -80,6 +81,7 @@ export default function App() {
           <AskPopover />
           <MissionsPanel />
           <DecisionCard />
+          <Celebration />
           <HumanModal />
           <Toast />
         </>

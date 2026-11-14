@@ -19,10 +19,52 @@ export function setServerVoice(available) {
   if (!available) serverDownUntil = Date.now() + 10 * 60_000;
 }
 
+// ---- How loud the voice is right now (0..1), so the bubble can "speak" -------------
+// ElevenLabs audio is measured for real with an analyser. The browser's own voice cannot be
+// measured, so it gets a speech-like envelope driven by its word boundaries.
+const speech = { mode: "off", analyser: null, buf: null, kick: 0, start: 0, smooth: 0 };
+let actx = null;
+function audioCtx() {
+  actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+  if (actx.state === "suspended") actx.resume().catch(() => {});
+  return actx;
+}
+
+// Called every frame by several things: computed once per frame, then cached.
+let lastAt = -1;
+export function speechLevel() {
+  const now = performance.now() / 1000;
+  if (now - lastAt < 0.006) return speech.smooth;
+  const dt = lastAt < 0 ? 0.016 : Math.min(0.1, now - lastAt);
+  lastAt = now;
+  let target = 0;
+  if (speech.mode === "audio" && speech.analyser) {
+    speech.analyser.getByteTimeDomainData(speech.buf);
+    let sum = 0;
+    for (let i = 0; i < speech.buf.length; i++) {
+      const v = (speech.buf[i] - 128) / 128;
+      sum += v * v;
+    }
+    target = Math.min(1, Math.sqrt(sum / speech.buf.length) * 3.2);
+  } else if (speech.mode === "synthetic") {
+    const t = now - speech.start;
+    // Phrase-like swells (about one every second and a half), not syllable flicker.
+    const phrase = 0.5 + 0.3 * Math.sin(t * 4.1) + 0.2 * Math.sin(t * 1.7 + 0.8);
+    const word = Math.exp(-(now - speech.kick) * 3);
+    target = Math.min(1, 0.3 + phrase * 0.35 + word * 0.15);
+  }
+  // Time-based easing: about a fifth of a second to rise, half a second to settle.
+  const tau = target > speech.smooth ? 0.2 : 0.5;
+  speech.smooth += (target - speech.smooth) * (1 - Math.exp(-dt / tau));
+  return speech.smooth;
+}
+export const isSpeaking = () => speech.mode !== "off";
+
 export function stopSpeaking() {
   token++;
   if (current) current.stop();
   current = null;
+  speech.mode = "off";
   if (typeof speechSynthesis !== "undefined") speechSynthesis.cancel();
 }
 
@@ -41,12 +83,21 @@ export function speak(text, opts = {}) {
   const my = ++token;
   const clean = String(text || "").trim();
   const done = (finished) => {
-    if (my === token) current = null;
+    if (my === token) {
+      current = null;
+      speech.mode = "off";
+    }
     opts.onEnd?.(finished);
+  };
+  const synthetic = () => {
+    speech.mode = "synthetic";
+    speech.start = performance.now() / 1000;
+    speech.kick = speech.start;
   };
   if (!clean) return done(true);
   if (voice.muted) {
-    // Keep timed flows moving at reading speed, without sound.
+    // Keep timed flows moving at reading speed, without sound. The bubble still "talks".
+    synthetic();
     const t = setTimeout(() => my === token && done(true), Math.min(9000, 900 + clean.length * 38));
     current = { stop: () => clearTimeout(t) };
     return;
@@ -61,7 +112,11 @@ export function speak(text, opts = {}) {
     u.lang = "en-US";
     u.rate = Math.min(1.4, Math.max(0.6, rate * 0.98));
     u.pitch = opts.voice === "cohost" ? 0.85 : 1;
-    u.onboundary = (e) => opts.onProgress?.(Math.min(1, e.charIndex / clean.length));
+    u.onstart = () => my === token && synthetic();
+    u.onboundary = (e) => {
+      speech.kick = performance.now() / 1000;
+      opts.onProgress?.(Math.min(1, e.charIndex / clean.length));
+    };
     u.onend = () => my === token && done(true);
     u.onerror = () => my === token && done(false);
     current = { stop: () => speechSynthesis.cancel() };
@@ -74,6 +129,19 @@ export function speak(text, opts = {}) {
     a.ontimeupdate = () => a.duration && opts.onProgress?.(Math.min(1, a.currentTime / a.duration));
     a.onended = () => my === token && done(true);
     a.onerror = () => my === token && browser();
+    try {
+      const ctx = audioCtx();
+      const src = ctx.createMediaElementSource(a);
+      const an = ctx.createAnalyser();
+      an.fftSize = 512;
+      src.connect(an);
+      an.connect(ctx.destination);
+      speech.analyser = an;
+      speech.buf = new Uint8Array(an.fftSize);
+    } catch {
+      speech.analyser = null;
+    }
+    a.onplaying = () => my === token && (speech.analyser ? (speech.mode = "audio") : synthetic());
     current = {
       stop: () => {
         a.pause();
@@ -191,11 +259,10 @@ export function listen({ serverStt, onText, onError, onState }) {
 }
 
 // ---- Tiny sound effects (synthesised, no files). They follow the voice mute switch. ----
-let actx = null;
 export function sfx(kind = "pop") {
   if (voice.muted) return;
   try {
-    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    const actx = audioCtx();
     const t = actx.currentTime;
     const notes = kind === "ding" ? [[660, 990, 0.18], [990, 1320, 0.22]] : kind === "pop" ? [[440, 150, 0.11]] : kind === "whoosh" ? [[180, 520, 0.25]] : [[560, 560, 0.04]];
     notes.forEach(([f1, f2, d], i) => {

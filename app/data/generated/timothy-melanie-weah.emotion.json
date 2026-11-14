@@ -1,0 +1,44 @@
+{
+ "hash": "519ae5ea36ef1be0",
+ "emotion": {
+  "anchor": "This plan protects Liam and Josh's future and your family's day-to-day stability.",
+  "topics": {
+   "cashflow": {
+    "stakes": "This gives you clear choice over how to use your extra cash to support family goals and options.",
+    "hope": "Understanding your surplus makes choosing between paying debt, saving for college, and investing a lot clearer."
+   },
+   "cushion": {
+    "stakes": "This gives you breathing room so you can handle surprises while keeping Liam and Josh's routine steady.",
+    "hope": "Knowing you hold a larger-than-recommended cushion confirms stability and frees you to make other choices with confidence."
+   },
+   "retirement": {
+    "stakes": "This makes retiring at 62 and 60 feel reliable, with income that keeps your household comfortable well into later life.",
+    "hope": "Knowing guaranteed income covers most needs shows where small adjustments can increase retirement freedom."
+   },
+   "debt": {
+    "stakes": "This lets you stop high interest from quietly shrinking your family's options and free up money for things you value.",
+    "hope": null
+   },
+   "protection": {
+    "stakes": "This makes sure Liam and Josh keep routines and opportunities, so their future and your peace of mind stay steady.",
+    "hope": null
+   },
+   "college": {
+    "stakes": "This makes it possible for you to give Liam and Josh real college choices without stretching your family's daily budget.",
+    "hope": "Knowing college is unfunded shows exactly how much annual saving creates real choices for Liam and Josh."
+   },
+   "investments": {
+    "stakes": "This gives you the chance to grow long-term wealth by adjusting how much cash and home equity you keep invested.",
+    "hope": "Seeing how much sits in cash and your home helps decide where investing more can boost long-term growth."
+   },
+   "score": {
+    "stakes": "This score makes it visible where one small step could raise your family's financial confidence and reduce uncertainty.",
+    "hope": "Seeing your overall score shows which fixes, like addressing the high-rate card, would raise confidence."
+   },
+   "assumptions": {
+    "stakes": "This makes your plan honest and adaptable by naming retirement timing and growth expectations you can revisit as life changes.",
+    "hope": "Being explicit about retirement ages and growth assumptions gives you a clear checklist for future updates."
+   }
+  }
+ }
+}

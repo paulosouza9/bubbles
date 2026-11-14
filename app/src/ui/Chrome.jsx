@@ -66,7 +66,7 @@ export function TopBar() {
             {level === 1 && (
               <>
                 <span className="sep">›</span>
-                <span className="crumb here">The figures</span>
+                <span className="crumb here">{useStore.getState().flat() ? "The figures" : "In more detail"}</span>
               </>
             )}
             {level === 4 && (

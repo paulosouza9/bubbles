@@ -211,6 +211,15 @@ function buildBase(c) {
           endAge: cp.endOfPlanAge,
           runsOutAge: runsOut,
           unpaid: runsOut ? r.savingsRunOut.value : 0,
+          detail: {
+            need: r.spendingNeed?.value ?? null,
+            guaranteed: r.guaranteedIncome?.value ?? null,
+            fromSavings: r.spendingGap?.value ?? null,
+            share: r.incomeShareOfNeed?.value ?? null,
+            withdrawal: r.withdrawalRateAverage?.value ?? null,
+            accountGap: rs.planningGapAtRetirementAgeInTodaysDollars > 0 ? rs.planningGapAtRetirementAgeInTodaysDollars : null,
+            extraSavings: rs.requiredExtraSavings > 0 ? rs.requiredExtraSavings : null,
+          },
           personName: years[0].age === adults[0].age ? adults[0].first_name : adults.at(-1).first_name,
           goals: fh.goals.chartGoals
             .filter((g) => !String(g.goalType).startsWith("BANKRUPTCY") && g.goalType !== "RETIREMENT")
@@ -249,6 +258,10 @@ function buildBase(c) {
           debts: rows.map((r) => ({ name: clean(r[0]), type: clean(r[1]), balance: r[2], rate: r[3], monthly: r[4] })),
           dti: dti.dti,
           dtiThreshold: dti.dtiFirstThreshold,
+          dtiThresholds: [dti.dtiFirstThreshold, dti.dtiSecondThreshold, dti.dtiThirdThreshold].filter((x) => typeof x === "number"),
+          debtOnlyDti: dti.debtOnlyDti,
+          monthlyIncome: dti.monthlyGrossIncome,
+          monthlyDebt: dti.monthlyDebtPayments,
           cardPayoff: cc.hasDebt && cc.ccPayoffDate ? monthYear(cc.ccPayoffDate) : null,
           cardMonthly: cc.monthlyPayment,
         },
@@ -467,7 +480,15 @@ function buildBase(c) {
     return { green: 0, amber: 1, red: 2 }[b.status] ?? 1;
   }
   const rest = walk.filter((b) => b !== best).sort((a, b) => sev(b) - sev(a) || b.weight - a.weight);
-  const order = [best?.id, ...rest.map((b) => b.id), "score"].filter(Boolean);
+  // Alternate what needs work with what is going well, so the walk never feels like a list of problems.
+  const tough = rest.filter((b) => b.status === "red");
+  const easier = rest.filter((b) => b.status !== "red").sort((a, b) => sev(a) - sev(b));
+  const mixed = [];
+  while (tough.length || easier.length) {
+    if (tough.length) mixed.push(tough.shift());
+    if (easier.length) mixed.push(easier.shift());
+  }
+  const order = [best?.id, ...mixed.map((b) => b.id), "score"].filter(Boolean);
 
   const d5 = (c.persona.match(/## D5[^\n]*\n+([A-Z][A-Z\- ]+)/) || [])[1]?.trim() || "";
   const suggestedProfile = /DELEGAT/.test(d5) ? "action" : /ANALY|VALIDAT|DIY|SELF/.test(d5) ? "expert" : "understand";
@@ -609,6 +630,124 @@ async function modelTexts(base, src) {
 
 const memo = new Map();
 
+// ---- Layered voice: each zoom level only says what is new ------------------------------
+
+const VOICE_SYSTEM = `You write what a voice says inside a financial-plan app, for one topic at a time.
+The person hears three levels in order:
+ 1. OUTSIDE: one sentence (given).
+ 2. INSIDE: the simple explanation (given as SIMPLE).
+ 3. DEEPER: the detailed explanation (given as DETAILED).
+Rewrite what the voice SAYS at INSIDE and DEEPER so that nothing is said twice:
+- INSIDE must not restate the TITLE, the OUTSIDE sentence, or any figure that is in them. Say only what SIMPLE adds. Plain words, 1 or 2 short sentences.
+  Example. TITLE "Your score: 26", OUTSIDE "Your overall score is 26, driven down by liquidity and protection gaps.", SIMPLE "The plan score is 26 out of 100, in the critical band. Savings and cash flow scored 0/25 and insurance and protection scored 4/20."
+  Good INSIDE: "That puts you in the critical band. The two areas pulling it down most are savings and cash flow, at 0 of 25, and protection, at 4 of 20."
+  Bad INSIDE: "The plan score is 26 out of 100." (already said)
+- DEEPER must not restate anything already said at OUTSIDE or INSIDE (no figure already said, no idea already said). Say only the extra detail from DETAILED, 1 to 3 sentences. If DETAILED adds nothing new, return "".
+- Never start with the topic title or with "Your score is", "The plan score is" or similar recaps.
+- Use only facts and figures that appear in the given texts. Copy figures exactly. No new advice.
+- Second person, warm, plain American English, no exclamation marks.
+Return JSON: { "<topic id>": { "inside": string, "deeper": string } }`;
+
+async function voiceTexts(id, bubbles, allowModel) {
+  const payload = bubbles.map((b) => ({ id: b.id, TITLE: b.title, OUTSIDE: b.building, SIMPLE: b.floor.plain, DETAILED: b.floor.standard }));
+  const hash = createHash("sha1").update(JSON.stringify(payload)).digest("hex").slice(0, 16);
+  const file = join(config.generatedDir, `${id}.voice.json`);
+  if (existsSync(file)) {
+    try {
+      const saved = JSON.parse(readFileSync(file, "utf8"));
+      if (saved.hash === hash) return saved.voice;
+    } catch {
+      /* regenerate */
+    }
+  }
+  if (!allowModel) return null;
+  let out;
+  try {
+    out = await chatJson({ system: VOICE_SYSTEM, user: JSON.stringify(payload), effort: "medium" });
+  } catch {
+    return null;
+  }
+  const voice = {};
+  for (const b of payload) {
+    const allowed = numberSet(`${b.TITLE} ${b.OUTSIDE} ${b.SIMPLE} ${b.DETAILED}`);
+    const o = out?.[b.id] || {};
+    const ok = (x, max) => typeof x === "string" && x.length <= max && numbersOk(x, allowed);
+    voice[b.id] = { inside: ok(o.inside, 420) ? clean(o.inside) : null, deeper: ok(o.deeper, 640) ? clean(o.deeper) : null };
+  }
+  mkdirSync(config.generatedDir, { recursive: true });
+  writeFileSync(file, JSON.stringify({ hash, voice }, null, 1));
+  return voice;
+}
+
+// ---- Why it matters: the human side of each topic --------------------------------------
+// Facts inform; feelings move people to act. For each topic: what is at stake in this
+// family's life, and what the first step changes. Honest, warm, never alarmist: no invented
+// urgency, no guilt, no figures that are not in the plan.
+
+const EMOTION_SYSTEM = `You help a family feel why their financial plan matters to their life, so they want to take the first step.
+The app already shows every figure. Your job is the human meaning, not the numbers.
+For each topic write:
+- "stakes": one sentence, max 22 words. What getting this right makes possible in their life: time, freedom, the people they love, peace of mind, the goals they named. Frame it as what they gain, never as what they could lose: no "or", no "otherwise", no worst case. Use first names (children too) when it fits. NO dollar amounts, NO percentages, NO scores. Years and ages are allowed.
+- "hope": one sentence, max 22 words. How the first step would feel or what it unlocks. If the plan has a step for this topic, you may name it and its score change exactly as given (for example "from 26 to 31"). If not, say what understanding this gives them. No other figures.
+- "anchor": one short sentence, max 14 words, on what this whole plan protects for them. No figures.
+Good stakes: "This is what keeps Liam and Josh's lives steady, whatever happens."
+Good stakes: "This is what turns retiring at 58 into real freedom, with money that lasts as long as you do."
+Bad stakes: "This decides whether retiring at 58 means freedom, or watching savings run out." (loss framing, worrying)
+Bad stakes: "You have $180,000 of life insurance versus a $900,000 recommendation." (just figures, no meaning)
+Good hope: "One phone call for an umbrella quote is the quickest win in your whole plan: your score goes from 26 to 31."
+Good hope: "Once you see where every dollar goes, choosing where it should go gets a lot easier."
+Bad hope: "It shows you need $163,330." (restates figures)
+Rules: second person, warm, honest, plain American English. No exclamation marks, no emojis. No fear words ("danger", "crisis", "disaster"). No artificial urgency ("act now", "before it's too late"). No guilt or shame. No advice beyond the plan's steps.
+Return JSON: { "anchor": string, "topics": { "<topic id>": { "stakes": string, "hope": string } } }`;
+
+async function emotionTexts(id, c, bubbles, moves, allowModel) {
+  const fh = c.financialHealth;
+  const section = (name) => (c.persona.match(new RegExp(`## ${name}[^\\n]*\\n+([\\s\\S]*?)(?=\\n## |$)`)) || [])[1]?.trim() || "";
+  const payload = {
+    household: fh.case.household.map((p) => ({ name: p.first_name, role: p.role, age: p.age })),
+    motivation: section("D6").slice(0, 600),
+    concerns: section("Subjective concerns").slice(0, 600),
+    topics: bubbles.map((b) => ({
+      id: b.id,
+      title: b.title,
+      status: b.status,
+      sentence: b.building,
+      simple: b.floor.plain,
+      steps: moves.filter((m) => m.bubbleId === b.id).map((m) => `${m.title}: score ${m.score_before} to ${m.score_after}`),
+    })),
+  };
+  const hash = createHash("sha1").update(JSON.stringify(payload)).digest("hex").slice(0, 16);
+  const file = join(config.generatedDir, `${id}.emotion.json`);
+  if (existsSync(file)) {
+    try {
+      const saved = JSON.parse(readFileSync(file, "utf8"));
+      if (saved.hash === hash) return saved.emotion;
+    } catch {
+      /* regenerate */
+    }
+  }
+  if (!allowModel) return null;
+  let out;
+  try {
+    out = await chatJson({ system: EMOTION_SYSTEM, user: JSON.stringify(payload), effort: "medium" });
+  } catch {
+    return null;
+  }
+  const allowed = numberSet(JSON.stringify(payload));
+  const banned = /(danger|crisis|act now|too late|hurry|urgent|disaster|strain|struggle|risk of|worry|afraid|fear)/i;
+  const ok = (x, max) => typeof x === "string" && x.length > 8 && x.length <= max && numbersOk(x, allowed) && !banned.test(x);
+  // The feeling lines carry no money figures or percentages: those are on screen already.
+  const noFigures = (x) => ok(x, 200) && !/[$%]|d{1,3},d{3}/.test(x);
+  const emotion = { anchor: noFigures(out?.anchor) ? clean(out.anchor) : null, topics: {} };
+  for (const t of payload.topics) {
+    const o = out?.topics?.[t.id] || {};
+    emotion.topics[t.id] = { stakes: noFigures(o.stakes) ? clean(o.stakes) : null, hope: noFigures(o.hope) ? clean(o.hope) : null };
+  }
+  mkdirSync(config.generatedDir, { recursive: true });
+  writeFileSync(file, JSON.stringify({ hash, emotion }, null, 1));
+  return emotion;
+}
+
 export async function buildPlan(id, { allowModel = true } = {}) {
   if (memo.has(id)) return memo.get(id);
   const c = await getCase(id);
@@ -636,9 +775,15 @@ export async function buildPlan(id, { allowModel = true } = {}) {
   const t = gen.texts;
 
   // Attach wording to the structure
-  const bubbles = base.bubbles.map((b) => ({ ...b, building: t.bubbles[b.id].building, floor: { plain: t.bubbles[b.id].plain, standard: t.bubbles[b.id].standard } }));
-  const byId = Object.fromEntries(bubbles.map((b) => [b.id, b]));
+  let bubbles = base.bubbles.map((b) => ({ ...b, building: t.bubbles[b.id].building, floor: { plain: t.bubbles[b.id].plain, standard: t.bubbles[b.id].standard } }));
+  // What the voice says at each level, without repeating the level before.
+  const voice = gen.generatedBy === "model" ? await voiceTexts(id, bubbles, allowModel) : null;
+  bubbles = bubbles.map((b) => ({ ...b, voice: { inside: voice?.[b.id]?.inside ?? null, deeper: voice?.[b.id]?.deeper ?? null } }));
   const moves = base.moves.map((m) => ({ ...m, ...t.moves[m.id], planTitle: m.title }));
+  // Why each topic matters to this family, and what the first step changes.
+  const emotion = gen.generatedBy === "model" ? await emotionTexts(id, c, bubbles, moves, allowModel) : null;
+  bubbles = bubbles.map((b) => ({ ...b, emotion: { stakes: emotion?.topics?.[b.id]?.stakes ?? null, hope: emotion?.topics?.[b.id]?.hope ?? null } }));
+  const byId = Object.fromEntries(bubbles.map((b) => [b.id, b]));
 
   // Missions: every move is a possible "quick" or "important" mission; every topic can be an "understand" mission.
   const understand = base.order
@@ -683,7 +828,7 @@ export async function buildPlan(id, { allowModel = true } = {}) {
     ...base,
     bubbles,
     moves,
-    texts: { city: t.city, strength: t.strength, greeting: `Okay, ${base.names.join(" and ")}. I have your plan. Let me walk you through it. It takes about three minutes.` },
+    texts: { city: t.city, strength: t.strength, anchor: emotion?.anchor ?? null, greeting: `Okay, ${base.names.join(" and ")}. I have your plan. Let me walk you through it. It takes about three minutes.` },
     missionPool: [...moveMissions, ...understand],
     firstMissions: [quick?.id, important?.id, worst?.id].filter(Boolean),
     generatedBy: gen.generatedBy,

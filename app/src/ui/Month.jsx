@@ -419,6 +419,7 @@ export function StepsInside() {
           ))}
         </div>
       </header>
+      {tab === "missions" && plan.texts?.anchor && <p className="anchor-line">{plan.texts.anchor}</p>}
       {tab === "missions" && (
         <p className="in-line small-line">
           {done === list.length && list.length ? "You closed the ring." : `${done} of ${list.length} done.`} Tap a mission to open it.

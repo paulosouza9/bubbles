@@ -1,0 +1,40 @@
+{
+ "hash": "d34ef1371cf2a9cd",
+ "emotion": {
+  "anchor": "This plan protects your freedom to choose how you live and when you retire.",
+  "topics": {
+   "cashflow": {
+    "stakes": "This gives you the breathing room to fund daily life, travel, and retiring at 58 with confidence.",
+    "hope": "Seeing which goals pull on your income makes choosing what to prioritize much easier."
+   },
+   "cushion": {
+    "stakes": "This gives you a steady cash buffer that keeps short-term plans and everyday life calm and predictable.",
+    "hope": "Knowing exactly how much cash you need makes choosing which near-term expenses to set aside simple."
+   },
+   "retirement": {
+    "stakes": "This makes retiring at 58 feel like a real choice, with a plan for steady income through retirement.",
+    "hope": "Review your withdrawal plan: score 26 to 62"
+   },
+   "debt": {
+    "stakes": "This frees up more of your income for goals by reducing high-interest credit faster.",
+    "hope": "Seeing the Amex payoff timeline makes choosing a repayment amount and pace feel straightforward."
+   },
+   "protection": {
+    "stakes": "This gives you the confidence that you and anyone depending on you are covered from big liability events.",
+    "hope": "Get an umbrella quote: score 26 to 31"
+   },
+   "investments": {
+    "stakes": "This lets your invested savings work harder toward retiring at 58 by aligning your stock mix with your Growth target.",
+    "hope": "Compare your stock mix: score 26 to 31"
+   },
+   "score": {
+    "stakes": "This gives you clear priorities so small wins build real progress toward freedom and confidence.",
+    "hope": "Seeing your score explains which first steps will move your plan most meaningfully."
+   },
+   "assumptions": {
+    "stakes": "This lets you see how choices about work, returns, and timing shape your retirement at 58.",
+    "hope": "Understanding the plan's assumptions shows which variables to watch as you aim for that retirement date."
+   }
+  }
+ }
+}

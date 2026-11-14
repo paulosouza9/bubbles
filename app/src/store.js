@@ -29,7 +29,7 @@ const freshFamilyState = () => ({
   easy: false,
   journeyDone: false,
   tutorialDone: false,
-  missions: { month: 1, active: [], status: {}, history: [] },
+  missions: { month: 1, active: [], status: {}, history: [], when: {} },
   understood: {},
   notes: { intakeChanges: [], worries: [], humanRequests: 0 },
   asked: {},
@@ -52,6 +52,8 @@ export const useStore = create((set, get) => ({
   muted: false,
   chat: { open: false, messages: [], quote: null, pending: false },
   decision: null,
+  celebrate: null, // { title, from, to, kind } shown after a step is done
+  actReady: false, // the action moment is on screen: the toy makes room for it
   missionsOpen: false,
   humanOpen: false,
   toast: null,
@@ -194,8 +196,15 @@ export const useStore = create((set, get) => ({
   },
   enter(id) {
     const p = PROFILES[get().profile().kind];
-    set({ focus: id, level: id === "steps" ? 2 : p.enter, fact: null });
+    // In the bubble world, stepping inside always lands on the simple version first.
+    set({ focus: id, level: id === "steps" || !get().flat() ? 2 : p.enter, fact: null });
     get().logView();
+  },
+  // The wording each zoom stop uses. In the bubble world: inside = simple, deeper = detailed.
+  styleNow() {
+    const s = get();
+    if (!s.flat()) return s.level <= 1 ? "standard" : "plain";
+    return s.profile().style;
   },
   setLevel(level) {
     const s = get();
@@ -220,6 +229,7 @@ export const useStore = create((set, get) => ({
     const s = get();
     const pr = s.profile();
     if (s.level === 1) return get().setLevel(2);
+    if (!s.flat()) return s.level === 2 ? get().setLevel(3) : null;
     if (s.level === 2 && pr.style === "standard") {
       const count = (pr.simplerCount || 0) + 1;
       set({ profiles: { ...s.profiles, [s.person]: { ...pr, style: "plain", simplerCount: count, kind: count >= 2 && pr.kind !== "action" ? "novice" : pr.kind } } });
@@ -232,7 +242,8 @@ export const useStore = create((set, get) => ({
     const s = get();
     const pr = s.profile();
     if (s.level === 4) return get().setLevel(3);
-    if (s.level === 3) return get().setLevel(2);
+    if (s.level === 3) return get().enter(s.focus);
+    if (!s.flat()) return s.level === 2 && s.focus !== "steps" ? get().setLevel(1) : null;
     if (s.level === 2 && pr.style === "plain") {
       set({ profiles: { ...s.profiles, [s.person]: { ...pr, style: "standard" } } });
       return get().logView();
@@ -247,7 +258,7 @@ export const useStore = create((set, get) => ({
     const s = get();
     const b = s.plan?.bubbles.find((x) => x.id === s.focus);
     if (!b) return;
-    get().log({ type: "view", bubble: b.id, level: s.level, style: s.profile().style, must_know_shown: b.mustKnow.map((m) => m.text) });
+    get().log({ type: "view", bubble: b.id, level: s.level, style: s.styleNow(), must_know_shown: b.mustKnow.map((m) => m.text) });
   },
 
   // ---- journey ----
@@ -303,8 +314,23 @@ export const useStore = create((set, get) => ({
     return projectedScore(s.plan, s.doneMoveIds());
   },
   setMissionStatus(id, status, extra = {}) {
+    const before = get().projected().score;
     set((s) => ({ missions: { ...s.missions, status: { ...s.missions.status, [id]: status } } }));
     get().log({ type: "mission_status", mission: id, status, ...extra });
+    if (status === "done" && !extra.undone) {
+      const m = get().mission(id);
+      set({ celebrate: { title: m?.title, kind: m?.type === "understand" ? "understand" : "done", bubbleId: m?.bubbleId, from: before, to: get().projected().score } });
+    }
+  },
+  setMissionWhen(id, when) {
+    set((s) => ({ missions: { ...s.missions, when: { ...(s.missions.when || {}), [id]: when } } }));
+    get().log({ type: "mission_when", mission: id, when });
+  },
+  addMission(id) {
+    set((s) => (s.missions.active.includes(id) ? {} : { missions: { ...s.missions, active: [...s.missions.active, id] } }));
+  },
+  setCelebrate(celebrate) {
+    set({ celebrate });
   },
   openDecision(id) {
     set({ decision: id });
@@ -365,7 +391,7 @@ export const useStore = create((set, get) => ({
         easy_mode: s.easy,
         selection: quote,
         question,
-        screen: b ? { bubble_id: b.id, bubble_title: b.title, status: b.status, miniapp: b.miniapp.template, text_on_screen: s.level === 2 ? b.floor[s.profile().style] : b.building } : { view: s.phase },
+        screen: b ? { bubble_id: b.id, bubble_title: b.title, status: b.status, miniapp: b.miniapp.template, text_on_screen: s.level <= 2 ? b.floor[s.styleNow()] : b.building } : { view: s.phase },
         history: s.chat.messages.slice(-6).map((m) => ({ role: m.role, text: m.text })),
       });
     } catch {

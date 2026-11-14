@@ -1,0 +1,41 @@
+{
+ "hash": "9c1ab992b696ba6d",
+ "voice": {
+  "cashflow": {
+   "inside": "You bring in $270,000 a year before taxes and save $61,500 of it. That leaves a reported net cash flow of $36,961 this year to decide how to use.",
+   "deeper": "You save 22.8% of income and fully capture employer matches. Roth IRAs show $0 contributed so far and could each accept up to $5,250.10, which competes with college saving."
+  },
+  "cushion": {
+   "inside": "You have $150,800 in bank and taxable money market accounts, which covers about 16 months of essentials. That cushion still covers 15.4 months after your $6,000 vacation set‑aside.",
+   "deeper": "The plan’s recommended emergency reserve is $75,180 to $84,578, and cash above reserve and near‑term goals totals $60,223, a resource available to address protection gaps."
+  },
+  "retirement": {
+   "inside": "Retirement needs average $184,304 a year, and guaranteed income covers most of that. The plan projects your savings won't run out before age 91.",
+   "deeper": "Guaranteed income averages $171,056 a year, with savings projected to supply $12,853 annually. Your savings and investments are projected to remain $2,371,900.89 at plan end, and the portfolio is about 77% equity versus a 60% Moderate target."
+  },
+  "debt": {
+   "inside": "You have $93,000 total debt, including an $18,000 Chase card. That card is currently paid $300 a month and would be paid off by September 2039 at that payment.",
+   "deeper": "Housing and debt payments equal 15.1% of income. Your cash cushion sits above the 8–9 month target and could be weighed against this high‑rate balance."
+  },
+  "protection": {
+   "inside": "Timothy has $140,000 of life insurance versus a recommended $750,000 to $1,500,000, and Melanie has $110,000 versus a recommended $600,000 to $1,200,000. You have no umbrella cover.",
+   "deeper": "The plan recommends a $1,000,000 umbrella and notes this leaves a clear liability gap given dependents and exposed assets."
+  },
+  "college": {
+   "inside": "That breaks to roughly $4,609.22 more saved each year as a first‑year projection.",
+   "deeper": "The remaining need splits to $55,118 for Liam (starts August 2038) and $58,391 for Josh (starts August 2041), and meeting it competes with other priorities."
+  },
+  "investments": {
+   "inside": "Real estate is $350,000 and makes up 44.4% of your $788,500 in total assets. You hold $150,000 in cash and $210,000 in invested savings, so a big share of liquid wealth isn't invested for long‑term growth.",
+   "deeper": "Accounts show about 45% stocks, 10% bonds, and 44% cash, with $154,200 in cash across accounts. Holdings include VTI $58,800, VEA $39,200, and LQD $14,700, and both employer matches ($8,000 and $6,000 a year) are being captured while college remains the primary funding gap."
+  },
+  "score": {
+   "inside": "Two main limits are the 18% revolving card and life‑cover gaps; fixing the card improves the score to 62.",
+   "deeper": "Savings and cash flow score 26/30 and liquidity 15/15. Debt scores 12/20 and insurance 7/20."
+  },
+  "assumptions": {
+   "inside": "The plan assumes Timothy retires at 62 and Melanie at 60, and prices rise 3% a year. Investment growth is assumed 7.56% a year.",
+   "deeper": "The plan runs to age 91, and Social Security start years and salary continuations are also specified in the plan."
+  }
+ }
+}

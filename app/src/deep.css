@@ -128,6 +128,7 @@
 
 /* ---- Outside: the bubble with its one sentence --------------------------------------- */
 .b-label.big {
+  animation: rise 0.5s 0.9s both;
   width: min(46vmin, 440px);
   font-size: clamp(18px, 3.3vmin, 32px);
 }
@@ -146,21 +147,187 @@
 }
 .outside {
   position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 6px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.45rem;
-  animation: rise 0.5s 0.6s both;
+  inset: 0;
   pointer-events: none !important;
 }
-.outside > * {
+.out-panel {
+  position: absolute;
+  left: 53%;
+  top: 50%;
+  transform: translateY(-50%);
+  width: min(470px, 40vw);
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
   pointer-events: auto;
+  animation: fade 0.7s 0.5s both;
 }
-.outside .mute {
-  text-shadow: 0 0 10px #fff, 0 0 10px #fff;
+.out-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--grey);
+}
+.out-status .b-step {
+  margin: 0 0 0 0.3rem;
+  font-size: 0.74rem;
+}
+.out-title {
+  font-size: clamp(2rem, 4.6vmin, 3.4rem);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+.out-hero {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: end;
+  gap: 0.35rem 0.9rem;
+  padding: 0.2rem 0 0.4rem;
+}
+.out-hero b {
+  font-size: clamp(3.6rem, 10vmin, 6.4rem);
+  font-weight: 700;
+  letter-spacing: -0.05em;
+  line-height: 0.88;
+  color: var(--ink);
+}
+.out-hero.s-red b {
+  color: var(--ink);
+}
+.out-hero.s-amber b {
+  color: var(--ink);
+}
+.out-hero.s-green b {
+  color: var(--ink);
+}
+.out-hero span {
+  font-size: 0.92rem;
+  color: #3a3a3c;
+  line-height: 1.3;
+  padding-bottom: 0.45rem;
+  max-width: 22ch;
+}
+.out-bar {
+  grid-column: 1 / -1;
+  display: block;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.07);
+  overflow: hidden;
+}
+.out-bar i {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  background: currentColor;
+  animation: growx 1.1s 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  transform-origin: left;
+}
+.out-hero.s-red .out-bar {
+  color: #ff3b30;
+}
+.out-hero.s-amber .out-bar {
+  color: #ff9f0a;
+}
+.out-hero.s-green .out-bar {
+  color: #34c759;
+}
+.out-hero.s-neutral .out-bar {
+  color: var(--blue);
+}
+.out-lede {
+  font-size: clamp(1.02rem, 2.1vmin, 1.25rem);
+  line-height: 1.4;
+  color: var(--ink);
+  font-weight: 500;
+  letter-spacing: -0.012em;
+}
+.out-inside {
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  padding-top: 0.85rem;
+}
+.out-inside p {
+  font-size: 0.95rem;
+  line-height: 1.4;
+  margin: 0.15rem 0 0.5rem;
+  color: #2c2c2e;
+}
+.out-inside ol {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1rem;
+  counter-reset: step;
+  font-size: 0.8rem;
+  color: var(--grey);
+}
+.out-inside li {
+  counter-increment: step;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.out-inside li::before {
+  content: counter(step);
+  width: 1.15rem;
+  height: 1.15rem;
+  border-radius: 50%;
+  background: rgba(0, 113, 227, 0.1);
+  color: var(--blue);
+  font-weight: 700;
+  font-size: 0.68rem;
+  display: inline-grid;
+  place-items: center;
+}
+.out-cta {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  flex-wrap: wrap;
+  margin-top: 0.2rem;
+}
+.out-cta .btn.primary {
+  box-shadow: 0 10px 26px rgba(0, 113, 227, 0.32);
+  animation: invite 2.8s 2s ease-in-out infinite;
+}
+@keyframes invite {
+  0%,
+  100% {
+    box-shadow: 0 10px 26px rgba(0, 113, 227, 0.32);
+  }
+  50% {
+    box-shadow:
+      0 10px 26px rgba(0, 113, 227, 0.32),
+      0 0 0 9px rgba(0, 113, 227, 0.1);
+  }
+}
+@media (max-width: 860px), (max-aspect-ratio: 23/20) {
+  .out-panel {
+    left: 50%;
+    top: auto;
+    bottom: 4px;
+    transform: translateX(-50%);
+    width: min(560px, calc(100vw - 32px));
+    gap: 0.55rem;
+    text-align: center;
+    align-items: center;
+  }
+  .out-hero {
+    justify-items: center;
+  }
+  .out-hero span {
+    max-width: none;
+  }
+  .out-inside ol {
+    justify-content: center;
+  }
+  .out-inside p,
+  .out-inside ol li:nth-child(n + 2) {
+    display: none;
+  }
 }
 
 /* ---- The row of dots (one per bubble) and the arrows ----------------------------------- */
@@ -258,6 +425,7 @@
   font-size: clamp(1.1rem, 2.6vmin, 1.5rem);
 }
 .in-line {
+  animation: fade 0.45s ease both;
   margin-top: 0.6rem;
   max-width: min(60ch, 92vw);
   text-align: center;
@@ -275,7 +443,12 @@
   line-height: 1.2;
   color: var(--ink);
   max-width: min(34ch, 92vw);
-  animation: rise 0.35s both;
+  animation: fade 0.45s ease both;
+}
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
 }
 .in-line.small-line {
   font-weight: 600;
@@ -554,4 +727,435 @@
     height: 2.6rem;
   }
 
+}
+
+/* ---- Deeper: the detailed version, drawn straight on the bubble (no cards) --------------- */
+.inside.deeper {
+  --base: 0.7s; /* charts start once the particles have settled */
+}
+.detail-scroll {
+  flex: 1;
+  min-height: 0;
+  width: min(1040px, 100%);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0.4rem 0.4rem 1rem;
+  margin-top: 0.4rem;
+  -webkit-mask-image: linear-gradient(transparent, #000 14px, #000 calc(100% - 18px), transparent);
+  mask-image: linear-gradient(transparent, #000 14px, #000 calc(100% - 18px), transparent);
+}
+.d-text {
+  max-width: 70ch;
+  margin: 0 auto 1.1rem;
+  text-align: center;
+  font-size: clamp(0.95rem, 1.85vmin, 1.06rem);
+  line-height: 1.5;
+  color: #3a3a3c;
+  animation: fade 0.6s 0.35s both;
+}
+.d-text .now {
+  color: var(--ink);
+  background: linear-gradient(transparent 64%, rgba(0, 113, 227, 0.16) 64%);
+  transition: background 0.4s, color 0.4s;
+}
+.detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.6rem 2.2rem;
+}
+.dchart {
+  min-width: 0;
+  animation: dfade 0.7s ease both;
+  animation-delay: calc(var(--base, 0.7s) + var(--i, 0) * 0.18s);
+}
+.dchart.wide {
+  grid-column: 1 / -1;
+}
+@keyframes dfade {
+  from {
+    opacity: 0;
+    filter: blur(6px);
+  }
+}
+.dchart h3 {
+  font-size: 0.98rem;
+  font-weight: 650;
+  margin: 0;
+}
+.dsub {
+  font-size: 0.8rem;
+  color: var(--grey);
+  margin: 0.15rem 0 0.5rem;
+}
+.dnote {
+  font-size: 0.8rem;
+  color: #3a3a3c;
+  margin-top: 0.35rem;
+}
+.dsvg {
+  width: 100%;
+  max-width: 720px;
+  max-height: 42vh;
+  height: auto;
+  display: block;
+  overflow: visible;
+  margin: 0 auto;
+}
+.dchart:not(.wide) .dsvg {
+  max-width: 560px;
+}
+.dsvg.interactive {
+  cursor: crosshair;
+}
+.dl {
+  font-size: 12.5px;
+  fill: #3a3a3c;
+}
+.dl.tiny {
+  font-size: 10.5px;
+  fill: var(--grey);
+}
+.dl .strong,
+.dl.strong {
+  font-weight: 650;
+  fill: var(--ink);
+}
+.dl.bad {
+  fill: #c4271b;
+}
+.dl.blue {
+  fill: var(--blue);
+}
+.dl.white,
+.dl .white {
+  fill: #fff;
+  font-weight: 600;
+}
+.dkeys {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.6rem;
+  font-size: 0.86rem;
+  margin-top: 0.4rem;
+}
+.dkeys .bad b {
+  color: #c4271b;
+}
+.dkeys .good b {
+  color: #1e7b3c;
+}
+.dbig {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem 1.4rem;
+  margin-top: 0.5rem;
+}
+.dbig div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+.dbig b {
+  font-size: clamp(1.4rem, 3.4vmin, 2rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+}
+.dbig span {
+  font-size: 0.8rem;
+  color: var(--grey);
+}
+.dbig .bad b {
+  color: #c4271b;
+}
+
+/* Things that draw themselves in, after the chart has faded in. */
+.dchart .grow,
+.dchart .flow,
+.dchart .draw,
+.dchart .fadein,
+.dchart .pop,
+.dchart .draw-y {
+  animation-delay: calc(var(--base, 0.7s) + var(--i, 0) * 0.18s + var(--dl, 0s));
+  animation-fill-mode: both;
+}
+.dchart .grow {
+  transform-box: fill-box;
+  transform-origin: left center;
+  animation-name: growx;
+  animation-duration: 0.9s;
+  animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+@keyframes growx {
+  from {
+    transform: scaleX(0);
+  }
+}
+.dchart .flow {
+  opacity: 0.32;
+  animation-name: flowin;
+  animation-duration: 0.9s;
+  animation-timing-function: ease;
+}
+.dchart .flow:hover {
+  opacity: 0.55;
+}
+@keyframes flowin {
+  from {
+    opacity: 0;
+  }
+}
+.dchart .draw {
+  stroke-dasharray: 1;
+  animation-name: drawline;
+  animation-duration: 1.4s;
+  animation-timing-function: cubic-bezier(0.3, 0.7, 0.2, 1);
+}
+@keyframes drawline {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+.dchart .fadein {
+  animation-name: flowin;
+  animation-duration: 0.8s;
+}
+.dchart .pop {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation-name: popin;
+  animation-duration: 0.6s;
+  animation-timing-function: cubic-bezier(0.3, 1.4, 0.5, 1);
+}
+@keyframes popin {
+  from {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+}
+.dchart .draw-y {
+  transform-box: fill-box;
+  transform-origin: center bottom;
+  animation-name: growy;
+  animation-duration: 0.8s;
+}
+@keyframes growy {
+  from {
+    transform: scaleY(0);
+  }
+}
+@media (max-width: 860px) {
+  .detail-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---- Emotion and action --------------------------------------------------------------- */
+.out-stakes {
+  font-size: clamp(1rem, 2vmin, 1.18rem);
+  line-height: 1.42;
+  color: var(--ink);
+  font-weight: 600;
+  letter-spacing: -0.012em;
+  padding-left: 0.9rem;
+  border-left: 3px solid var(--blue);
+}
+.out-lede {
+  font-weight: 400 !important;
+  color: #3a3a3c !important;
+}
+.act {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.55rem;
+  margin-bottom: 0.3rem;
+  animation: fade 0.7s ease both;
+}
+.act-hope {
+  font-size: clamp(1.02rem, 2.2vmin, 1.25rem);
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  text-align: center;
+  max-width: 46ch;
+  color: var(--ink);
+  text-shadow: 0 0 12px #fff, 0 0 12px #fff;
+}
+.act-btn.primary {
+  box-shadow: 0 10px 26px rgba(0, 113, 227, 0.32);
+  animation: invite 2.8s 1.2s ease-in-out infinite;
+}
+.act.done .act-btn {
+  color: #1e7b3c;
+  border-color: #bfe8cc;
+  background: #eef9f1;
+  opacity: 1;
+}
+.why-matters {
+  font-size: 1.08rem;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: -0.012em;
+  padding-left: 0.9rem;
+  border-left: 3px solid var(--blue);
+}
+.when {
+  text-align: center;
+  padding: 0.6rem 0;
+  animation: fade 0.5s ease both;
+}
+.when-q {
+  font-size: 1.25rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.7rem;
+}
+.when-opts {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 0.6rem;
+}
+.when-opts .btn {
+  min-width: 7.5rem;
+}
+.planned {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--blue);
+}
+.anchor-line {
+  margin-top: 0.35rem;
+  font-size: clamp(0.95rem, 1.9vmin, 1.1rem);
+  font-weight: 600;
+  color: #3a3a3c;
+  text-align: center;
+  max-width: 44ch;
+}
+
+/* The celebration: a full-screen bubble with the score climbing and bubbles rising. */
+.celebrate {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(circle at 50% 45%, rgba(255, 255, 255, 0.99) 0%, rgba(255, 255, 255, 0.96) 50%, rgba(232, 246, 237, 0.95) 100%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  backdrop-filter: blur(20px) saturate(160%);
+  animation: bubble-in 0.7s cubic-bezier(0.25, 0.9, 0.3, 1) both;
+  overflow: hidden;
+}
+.cel-bubbles i {
+  position: absolute;
+  bottom: -60px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff 0 18%, rgba(52, 199, 89, 0.28) 60%, rgba(0, 113, 227, 0.18));
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 6px 16px rgba(29, 43, 79, 0.08);
+  animation: rise-up linear infinite both;
+}
+@keyframes rise-up {
+  0% {
+    transform: translateY(0) scale(0.6);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-115vh) scale(1);
+    opacity: 0;
+  }
+}
+.cel-col {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.55rem;
+  width: min(520px, calc(100vw - 32px));
+  animation: fade 0.6s 0.25s both;
+}
+.cel-ring {
+  position: relative;
+  display: grid;
+  place-items: center;
+  margin-bottom: 0.4rem;
+  animation: popin 0.8s 0.2s cubic-bezier(0.3, 1.5, 0.5, 1) both;
+}
+.cel-ring svg text {
+  display: none;
+}
+.cel-ring.small svg text {
+  display: initial;
+}
+.cel-count {
+  position: absolute;
+  font-size: 4rem;
+  font-weight: 700;
+  letter-spacing: -0.05em;
+  color: #1e7b3c;
+}
+.cel-title {
+  font-size: clamp(2rem, 5vmin, 3rem);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+}
+.cel-what {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #3a3a3c;
+}
+.cel-line {
+  font-size: 1.15rem;
+  line-height: 1.4;
+}
+.cel-month {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: #3a3a3c;
+  margin-top: 0.2rem;
+}
+.cel-anchor {
+  font-size: 0.95rem;
+  color: var(--grey);
+  font-style: italic;
+  max-width: 40ch;
+}
+.celebrate .btn.big {
+  margin-top: 0.6rem;
+}
+
+.inside .in-bottom:has(.act) {
+  background: linear-gradient(rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.86) 26%);
+  border-radius: 40px 40px 0 0;
+  padding-top: 1.6rem;
+}
+
+.out-step {
+  background: rgba(52, 199, 89, 0.09);
+  border-radius: 18px;
+  padding: 0.7rem 0.95rem;
+}
+.out-step .eyebrow {
+  color: #1e7b3c;
+}
+.out-step p {
+  font-size: 0.98rem;
+  line-height: 1.38;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0.1rem 0 0;
+}
+.out-cta .mute.small {
+  max-width: 26ch;
+  line-height: 1.3;
 }

@@ -1,0 +1,41 @@
+{
+ "hash": "b5ec8125ed15953d",
+ "voice": {
+  "cashflow": {
+   "inside": "You save a lot—$60,000 a year—but your spending and taxes exceed income. Think of your money like buckets: the taxable bucket is being filled while retirement and college buckets aren’t.",
+   "deeper": "Your income is $250,000, with expenses of $116,100 and taxes of $66,818; housing is $13,500 a year. Retirement accounts hold $0, and college needs total $98,838."
+  },
+  "cushion": {
+   "inside": "You have more than the suggested emergency fund, so immediate risk is low. After setting aside a $6,000 vacation and Ethan’s $12,500 college payment, only a small extra cushion remains.",
+   "deeper": "Accessible cash covers 7.9 months of essential expenses before near‑term goals. The recommended reserve is $50,625 to $60,750, and after setting aside $18,500 for near‑term goals months covered fall to 6.1."
+  },
+  "retirement": {
+   "inside": "Your retirement plan depends heavily on savings because guaranteed income is limited. Social Security covers only part, so savings must stretch.",
+   "deeper": "Planned spending left unpaid is $1,448,673, with yearly retirement spending averaging $153,672. Guaranteed income averages $38,336 a year (about 25% of need), leaving roughly $115,335 a year to come from savings, and retirement accounts currently hold $0."
+  },
+  "debt": {
+   "inside": "You carry no loans, so monthly income isn’t eaten by debt payments. That leaves flexibility to fund college or retirement, but cash flow still matters.",
+   "deeper": "Housing and debt payments equal 5.4% of income, well below lender strain thresholds. Borrowing remains an option, though the plan flags the thin cash cushion as the main pressure."
+  },
+  "protection": {
+   "inside": "You have life insurance and an umbrella policy to protect your family if you can’t work. They’re sized to cover major risks so your children are protected.",
+   "deeper": "Life insurance is $2,000,000 (within the $1,250,000–$2,500,000 recommendation) and umbrella liability is $2,000,000. Long‑term disability pays $12,500 a month, so income protection is strong and doesn’t compete with savings goals. The plan suggests confirming underlying home and auto cover for gaps under the umbrella."
+  },
+  "college": {
+   "inside": "You currently have $0 in 529s and will need more cash for both children’s tuition. College funding is near‑term for Ethan and competes with retirement saving.",
+   "deeper": "Ethan still needs $48,469 and Ava $50,369, with Ava due to start college in August 2028."
+  },
+  "investments": {
+   "inside": "Your investable assets are mostly outside retirement accounts and concentrated in a few ETFs. The house is valuable but not easily turned into yearly spending money.",
+   "deeper": "Your invested mix is 68% stocks, 12% bonds, 20% cash versus a target of 65/14/21. Major holdings include VTI $162,000, SCHD $93,000, JNK $50,000 and VWO $30,000. You could contribute up to $7,500 to a traditional IRA and $4,400 to an HSA, both currently at $0."
+  },
+  "score": {
+   "inside": "You’re in good shape, especially on liquidity, debt and protection. A few targeted changes could raise the score a few points.",
+   "deeper": "Component scores are: Savings and cash flow 22/30; Debt 20/20; Investments 10/15; Liquidity 15/15; Insurance 14/20. Top moves include adding homeowners insurance to close a coverage gap, plus reducing VTI concentration and adjusting the growth allocation."
+  },
+  "assumptions": {
+   "inside": "Several baseline assumptions shape the projection, like your retirement age and ongoing salary. These are the lens the plan uses to test outcomes.",
+   "deeper": "Samantha’s salary of $250,000 is assumed to continue until 2044, with Social Security for Samantha assumed to start in 2046. The plan also includes recurring items like a $6,000 vacation every year."
+  }
+ }
+}

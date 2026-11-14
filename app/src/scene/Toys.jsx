@@ -6,10 +6,10 @@
 import { Html } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { easing } from "maath";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { projectedScore } from "../../shared/score.js";
-import { sfx } from "../audio.js";
+import { sfx as playSfx } from "../audio.js";
 import { pct, usd, usdShort } from "../format.js";
 import { useStore } from "../store.js";
 
@@ -26,7 +26,12 @@ export function burst(obj, color = C.blue, n = 16) {
   bursts.queue.push({ p: tmp.clone(), color, n });
 }
 
+export const PreviewCtx = createContext(false);
+const usePreview = () => useContext(PreviewCtx);
+const sfx = playSfx;
+
 function T({ p, cls = "", children }) {
+  if (usePreview()) return null;
   return (
     <Html center position={p} zIndexRange={[6, 0]} style={{ pointerEvents: "none" }}>
       <div className={`t3 ${cls}`}>{children}</div>
@@ -171,12 +176,13 @@ function Gauge({ score, projected, y = 0, r = 0.95 }) {
 
 // ---- Cash flow: pour your income into tubes --------------------------------------------
 function BucketsToy({ data }) {
+  const preview = usePreview();
   const [poured, setPoured] = useState(false);
   const [sel, setSel] = useState(null);
   useEffect(() => {
     const t = setTimeout(() => {
       setPoured(true);
-      sfx("whoosh");
+      if (!preview) sfx("whoosh");
     }, 700);
     return () => clearTimeout(t);
   }, []);
@@ -294,6 +300,7 @@ function TankToy({ data }) {
 
 // ---- Retirement: slide along the years -----------------------------------------------
 function TimelineToy({ data }) {
+  const preview = usePreview();
   const n = data.years.length;
   const firstAge = data.years[0].age;
   const retireIdx = Math.max(0, data.years.findIndex((y) => y.year >= data.retireYear));
@@ -329,9 +336,11 @@ function TimelineToy({ data }) {
     const t0 = performance.now() + 600;
     const tick = (t) => {
       if (touched.current) return;
-      const k = Math.min(n - 1, Math.max(0, Math.floor(((t - t0) / 5200) * (n - 1))));
-      setI(k);
-      if (k < n - 1) raf = requestAnimationFrame(tick);
+      const span = preview ? 9000 : 5200;
+      const raw = ((t - t0) / span) * (n - 1);
+      const k = Math.min(n - 1, Math.max(0, Math.floor(preview ? raw % (n + 6) : raw)));
+      setI(Math.min(n - 1, k));
+      if (preview || k < n - 1) raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
@@ -339,8 +348,10 @@ function TimelineToy({ data }) {
   useEffect(() => {
     if (outIdx >= 0 && i >= outIdx && !popped.current) {
       popped.current = true;
-      burst(marble.current, C.red, 26);
-      sfx("pop");
+      if (!preview) {
+        burst(marble.current, C.red, 26);
+        sfx("pop");
+      }
     }
     if (outIdx >= 0 && i < outIdx) popped.current = false;
   }, [i]);
@@ -363,7 +374,7 @@ function TimelineToy({ data }) {
         <sphereGeometry args={[0.1, 32, 32]} />
         <Solid color={ranOut ? C.red : "#ffffff"} emissive={ranOut ? C.red : C.blue} emissiveIntensity={0.35} />
       </mesh>
-      <mesh position={[0, -0.1, 0.2]} onPointerMove={scrub} onPointerDown={scrub}>
+      <mesh position={[0, -0.1, 0.2]} onPointerMove={preview ? undefined : scrub} onPointerDown={preview ? undefined : scrub} visible={!preview}>
         <planeGeometry args={[W + 0.6, 2.5]} />
         <meshBasicMaterial transparent opacity={0} depthWrite={false} />
       </mesh>
@@ -376,7 +387,7 @@ function TimelineToy({ data }) {
           </mesh>
         );
       })}
-      <T p={[xOf(i), base + hOf(i) + 0.55, 0]} cls={ranOut ? "bad" : ""}>
+      <T p={[xOf(i), Math.min(base + hOf(i) + 0.5, 0.82), 0]} cls={ranOut ? "bad" : ""}>
         <small>
           {yr.year} · {data.personName} is {firstAge + i}
         </small>
@@ -686,48 +697,14 @@ function StepsToy() {
   );
 }
 
-// ---- The figures: every fact is a small bubble you can tap ---------------------------------------
-export function FactOrbs({ desks }) {
-  const fact = useStore((s) => s.fact);
-  const setFact = useStore((s) => s.setFact);
-  const n = desks.length;
-  const rows = n > 10 ? 3 : n > 4 ? 2 : 1;
-  const cols = Math.ceil(n / rows);
-  const gx = Math.min(1.05, 5 / cols);
-  const gy = rows === 3 ? 0.85 : 1.05;
-  const r = Math.min(0.42, gx * 0.4, gy * 0.4);
-  return (
-    <group position={[0, -0.25, 0]}>
-      {desks.map((d, i) => {
-        const row = Math.floor(i / cols);
-        const inRow = Math.min(cols, n - row * cols);
-        const x = (i - row * cols - (inRow - 1) / 2) * gx;
-        const y = ((rows - 1) / 2 - row) * gy;
-        return (
-          <group key={i}>
-            <Orb
-              p={[x, y, 0]}
-              r={fact === i ? r * 1.15 : r}
-              glass
-              color={C.blue}
-              onTap={() => {
-                setFact(fact === i ? null : i);
-                sfx("pop");
-              }}
-            />
-            <T p={[x, y, r]} cls={`fact ${fact === i ? "on" : ""}`}>
-              <span style={{ width: `${r * 36}vmin` }}>{d.value}</span>
-            </T>
-          </group>
-        );
-      })}
-    </group>
-  );
-}
-
 const MAP = { buckets: BucketsToy, tank: TankToy, timeline: TimelineToy, debts: DebtsToy, coverage: CoverageToy, college: CollegeToy, allocation: AllocationToy, score: ScoreToy, steps: StepsToy };
 
-export default function Toy({ bubble }) {
+export default function Toy({ bubble, preview = false }) {
   const Cmp = MAP[bubble.miniapp.template];
-  return Cmp ? <Cmp data={bubble.miniapp.data} /> : null;
+  if (!Cmp) return null;
+  return (
+    <PreviewCtx.Provider value={preview}>
+      <Cmp data={bubble.miniapp.data} />
+    </PreviewCtx.Provider>
+  );
 }

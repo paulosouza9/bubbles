@@ -7,16 +7,17 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { easing } from "maath";
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
-import { sfx } from "../audio.js";
+import { isSpeaking, sfx, speechLevel } from "../audio.js";
 import { STATUS_COLOR } from "../format.js";
 import { computeLayout, DECOR } from "../layout.js";
 import { useStore } from "../store.js";
-import Toy, { bursts, FactOrbs } from "./Toys.jsx";
+import { DissolveParticles, dissolve, samplePoints } from "./Dissolve.jsx";
+import Toy, { bursts } from "./Toys.jsx";
 
 const FOV = 35;
 const TAN = Math.tan((FOV * Math.PI) / 360);
 const R = 2; // every plan bubble has the same size: each one is its own world
-const INSIDE = { 2: 0.62, 1: 0.5 }; // camera distance from the centre, in bubble radii
+const INSIDE = { 2: 0.62, 1: 0.58 }; // camera distance from the centre, in bubble radii
 const formClock = { t: 9 };
 
 function useCanvasTexture(draw, w = 256, h = 256) {
@@ -105,12 +106,22 @@ function Rig({ layout }) {
       const shift = aspect > 1.2 ? -layout.halfW * 0.85 : 0;
       p = [shift, 0, d];
       l = [shift, 0, 0];
-    } else if (s.level >= 3 || s.phase === "forming" || s.phase === "calibrate") {
-      const fill = s.phase === "calibrate" ? 0.86 : s.phase === "forming" ? 0.5 : 0.62;
+    } else if (s.phase === "forming" || s.phase === "calibrate") {
+      const fill = s.phase === "calibrate" ? 0.86 : 0.5;
       const d = Math.max(R / (TAN * fill), R / (TAN * aspect * 0.9));
-      const lift = s.phase === "forming" ? -0.9 : s.phase === "calibrate" ? 0 : -0.35;
+      const lift = s.phase === "forming" ? -0.9 : 0;
       p = [0, lift, d];
       l = [0, lift, 0];
+    } else if (s.level >= 3) {
+      // Outside: the bubble sits to one side and its story to the other (below, on a phone).
+      const wide = aspect > 1.15;
+      const fill = wide ? 0.66 : 0.42;
+      const d = Math.max(R / (TAN * fill), R / (TAN * aspect * (wide ? 0.5 : 0.82)));
+      const halfW = TAN * d * aspect;
+      const sx = wide ? halfW * 0.4 : 0;
+      const sy = wide ? -0.12 : -TAN * d * 0.36;
+      p = [sx, sy, d];
+      l = [sx, sy, 0];
     } else {
       p = [0, 0, R * INSIDE[s.level]];
       l = [0, 0, -R];
@@ -155,18 +166,39 @@ function Interior({ bubble }) {
   const level = useStore((s) => s.level);
   const { size } = useThree();
   const group = useRef();
+  const toy = useRef();
+  const prev = useRef(level);
+  const [toyOn, setToyOn] = useState(level === 2);
   const aspect = size.width / size.height;
   const fit = Math.min(1, aspect / 1.3);
+
+  // Going deeper: break the toy into particles, then remove it. Coming back: gather, regrow.
+  useEffect(() => {
+    const from = prev.current;
+    prev.current = level;
+    if (level === 1 && from === 2 && toyOn) {
+      dissolve("out", samplePoints(toy.current));
+      setToyOn(false);
+    } else if (level === 2) {
+      if (from === 1) dissolve("in", { points: [], colors: [] });
+      setToyOn(true);
+    }
+  }, [level]);
+
   useFrame((_, dt) => {
     const s = useStore.getState();
-    const unit = ((R * INSIDE[Math.min(2, Math.max(1, s.level))] * TAN) / 3.3) * fit;
-    easing.damp3(group.current.scale, [unit, unit, unit], s.reduced ? 0.0001 : 0.3, dt);
-    group.current.position.y = unit * 0.05;
+    const unit = ((R * INSIDE[2] * TAN) / 3.3) * fit * (s.actReady && s.level === 2 ? 0.74 : 1);
+    easing.damp3(group.current.scale, [unit, unit, unit], s.reduced ? 0.0001 : 0.45, dt);
+    easing.damp(group.current.position, "y", s.actReady && s.level === 2 ? unit * 0.32 : unit * 0.05, 0.45, dt);
+    if (toy.current) easing.damp3(toy.current.scale, [1, 1, 1], s.reduced ? 0.0001 : 0.28, dt);
   });
   return (
     <group ref={group} scale={0.0001}>
-      {level === 2 && <Toy bubble={bubble} key={`toy-${bubble.id}`} />}
-      {level === 1 && <FactOrbs desks={bubble.desks} key={`facts-${bubble.id}`} />}
+      {toyOn && (
+        <group ref={toy} scale={0.0001} key={`toy-${bubble.id}`}>
+          <Toy bubble={bubble} />
+        </group>
+      )}
     </group>
   );
 }
@@ -251,12 +283,104 @@ function Droplets() {
   );
 }
 
+// ---- The bubble speaks: it swells with the voice and sends out soft waves ------------------
+
+function SpeechWaves({ r, show }) {
+  const group = useRef();
+  const pool = useRef(Array.from({ length: 7 }, () => ({ age: 9, life: 1.6, strength: 0 })));
+  const last = useRef({ t: 0, level: 0 });
+  useFrame((st, dt) => {
+    group.current.lookAt(st.camera.position);
+    const level = speechLevel();
+    const now = st.clock.elapsedTime;
+    const L = last.current;
+    // A new wave on each rising peak of the voice (a word or a stressed syllable).
+    if (show && isSpeaking() && level > 0.45 && level >= L.level && now - L.t > 1.1) {
+      const w = pool.current.find((p) => p.age >= p.life) || pool.current[0];
+      w.age = 0;
+      w.life = 2.6;
+      w.strength = 0.6 + level * 0.4;
+      L.t = now;
+    }
+    L.level = level;
+    group.current.children.forEach((m, i) => {
+      const p = pool.current[i];
+      p.age += dt;
+      const k = Math.min(1, p.age / p.life);
+      const alive = show && k < 1;
+      m.visible = alive;
+      if (!alive) return;
+      const e = 1 - Math.pow(1 - k, 3);
+      const sc = 1.01 + e * 0.35;
+      m.scale.set(sc, sc, sc);
+      m.material.opacity = Math.sin(Math.min(1, k * 4) * Math.PI * 0.5) * (1 - k) * (1 - k) * 0.32 * p.strength;
+    });
+  });
+  return (
+    <group ref={group}>
+      {Array.from({ length: 7 }, (_, i) => (
+        <mesh key={i} visible={false}>
+          <torusGeometry args={[r, 0.018, 10, 160]} />
+          <meshBasicMaterial color={i % 2 ? "#9EC1FF" : "#C7B5FF"} transparent opacity={0} depthWrite={false} toneMapped={false} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+// ---- A small, slowly turning copy of the toy, seen through the glass from outside -----------
+
+function Preview({ bubble }) {
+  const ref = useRef();
+  useFrame((st, dt) => {
+    const t = st.clock.elapsedTime;
+    const s = useStore.getState();
+    easing.damp3(ref.current.scale, [0.42, 0.42, 0.42], s.reduced ? 0.0001 : 0.5, dt);
+    ref.current.rotation.y = s.reduced ? 0 : Math.sin(t * 0.35) * 0.32;
+    ref.current.rotation.x = s.reduced ? 0 : Math.sin(t * 0.22) * 0.06;
+  });
+  return (
+    <group ref={ref} scale={0.0001} position={[0, 0.05, -0.15]}>
+      <Toy bubble={bubble} preview />
+    </group>
+  );
+}
+
+// ---- The label on the front of the bubble (one, always mounted) ---------------------------
+
+function BubbleLabel() {
+  const focus = useStore((s) => s.focus);
+  const level = useStore((s) => s.level);
+  const phase = useStore((s) => s.phase);
+  const title = useStore((s) => (s.focus ? s.bubble(s.focus)?.title : null));
+  const stepHere = useStore((s) => s.journeyDone && s.currentMission()?.bubbleId === s.focus);
+  const b = title ? useStore.getState().bubble(focus) : null;
+  const show = Boolean(b) && level === 3 && (phase === "journey" || phase === "cloud");
+  return (
+    <Html center zIndexRange={[4, 0]} style={{ pointerEvents: "none", display: show ? "block" : "none" }}>
+      {b && (
+        <div className="b-label big" key={`${b.id}-${show}`}>
+          <div className="b-title">
+            {b.status !== "neutral" && <i className="dot" style={{ background: STATUS_COLOR[b.status] }} />}
+            {b.title}
+          </div>
+          <div className="b-sub" data-ask>
+            {b.building}
+          </div>
+          {stepHere && <div className="b-step">Your next step is in here</div>}
+        </div>
+      )}
+    </Html>
+  );
+}
+
 // ---- The bubble -----------------------------------------------------------------------------
 
 function PlanBubble({ id }) {
   const group = useRef();
   const inner = useRef();
   const ring = useRef();
+  const shell = useRef();
   const [hovered, setHovered] = useState(false);
   const bubble = useStore((s) => s.bubble(id).title) && useStore.getState().bubble(id);
   const focus = useStore((s) => s.focus);
@@ -278,11 +402,17 @@ function PlanBubble({ id }) {
     easing.damp3(group.current.scale, [target, target, target], s.reduced ? 0.0001 : active ? 0.2 : 0.14, dt);
     const float = inside || s.reduced ? 0 : 1;
     group.current.position.set(Math.cos(t * 0.45) * 0.04 * float, Math.sin(t * 0.6) * 0.07 * float, 0);
-    easing.damp(inner.current.material, "opacity", inside ? 0.42 : 0, 0.25, dt);
+    easing.damp(inner.current.material, "opacity", inside ? (s.level === 1 ? 0.78 : 0.42) : 0, 0.35, dt);
+    // Speaking: the glass swells with the voice. Gentle from inside, clearer from outside.
+    const v = active ? speechLevel() * (s.reduced ? 0.6 : 1) : 0;
+    const swell = 1 + (inside ? 0 : v * 0.022);
+    easing.damp3(shell.current.scale, [swell, swell, swell], 0.35, dt);
     if (ring.current) {
       const pulse = 1 + Math.sin(t * 2.2) * 0.012;
       ring.current.scale.set(pulse, pulse, pulse);
       ring.current.visible = s.level === 3;
+      // Face the camera, which now looks at the bubble from one side.
+      ring.current.lookAt(st.camera.position);
     }
   });
 
@@ -290,6 +420,7 @@ function PlanBubble({ id }) {
   return (
     <group ref={group} scale={0.0001}>
       <mesh
+        ref={shell}
         onClick={(e) => {
           if (!clickable) return;
           e.stopPropagation();
@@ -314,26 +445,14 @@ function PlanBubble({ id }) {
         <meshBasicMaterial color="#ffffff" side={THREE.BackSide} transparent opacity={0} depthWrite={false} toneMapped={false} />
       </mesh>
       <Shadow r={R} hidden={inside} />
+      {active && <SpeechWaves r={R} show={!inside && phase !== "month"} />}
       {stepHere && active && (
         <mesh ref={ring}>
           <torusGeometry args={[R * 1.07, 0.022, 12, 120]} />
           <meshBasicMaterial color="#0071E3" transparent opacity={0.75} toneMapped={false} />
         </mesh>
       )}
-      {active && level === 3 && browsing && (
-        <Html center zIndexRange={[4, 0]} style={{ pointerEvents: "none" }}>
-          <div className="b-label big">
-            <div className="b-title">
-              {bubble.status !== "neutral" && <i className="dot" style={{ background: STATUS_COLOR[bubble.status] }} />}
-              {bubble.title}
-            </div>
-            <div className="b-sub" data-ask>
-              {bubble.building}
-            </div>
-            {stepHere && <div className="b-step">Your next step is in here</div>}
-          </div>
-        </Html>
-      )}
+      {active && level === 3 && browsing && <Preview bubble={bubble} key={`p-${id}`} />}
       <MicroBubbles visible={inside} />
       {inside && <Interior bubble={bubble} />}
     </group>
@@ -365,6 +484,11 @@ function Scene() {
   const { size } = useThree();
   const layout = useMemo(() => computeLayout(DECOR, size.width / size.height < 0.85), [size.width < size.height * 0.85]);
   const ids = useMemo(() => (plan ? [...plan.bubbles.map((b) => b.id), "steps"] : []), [plan]);
+  const [labelReady, setLabelReady] = useState(false);
+  useEffect(() => {
+    let a = requestAnimationFrame(() => (a = requestAnimationFrame(() => setLabelReady(true))));
+    return () => cancelAnimationFrame(a);
+  }, []);
   // Every time a new bubble takes the stage, it forms again from droplets.
   useEffect(() => {
     if (!plan) return;
@@ -391,6 +515,7 @@ function Scene() {
       {plan && ids.map((id) => <PlanBubble key={`${plan.family}-${id}`} id={id} />)}
       {plan && <Droplets />}
       <Bursts />
+      <DissolveParticles />
     </>
   );
 }

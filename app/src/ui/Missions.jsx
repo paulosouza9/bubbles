@@ -3,6 +3,7 @@
 // are no rankings or daily streaks, and no mission starts without its decision card.
 import { useMemo, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
+import { sfx } from "../audio.js";
 import { usd } from "../format.js";
 import { ScoreRing } from "../miniapps/index.jsx";
 import { useStore } from "../store.js";
@@ -188,11 +189,20 @@ export function DecisionCard() {
   const bubble = useStore((s) => (m ? s.plan.bubbles.find((b) => b.id === m.bubbleId) : null));
   const move = useStore((s) => (m?.moveId ? s.plan.moves.find((x) => x.id === m.moveId) : null));
   const [passed, setPassed] = useState(false);
-  const { closeDecision, setMissionStatus, enter, setHumanOpen, markUnderstood, setMissionsOpen } = useStore.getState();
+  const [askWhen, setAskWhen] = useState(false);
+  const when = useStore((s) => (s.decision ? s.missions.when?.[s.decision] : null));
+  const { closeDecision, setMissionStatus, setMissionWhen, enter, setHumanOpen, markUnderstood, setMissionsOpen, showToast } = useStore.getState();
   if (!id || !m) return null;
   const close = () => {
     setPassed(false);
+    setAskWhen(false);
     closeDecision();
+  };
+  const commit = (choice) => {
+    setMissionWhen(m.id, choice);
+    sfx("ding");
+    showToast({ title: "Decided", text: `${m.title}: ${choice.toLowerCase()}. It is waiting for you in “Your next steps”.` });
+    close();
   };
   const understood = passed || status !== "todo";
   return (
@@ -210,6 +220,7 @@ export function DecisionCard() {
           </button>
         </header>
         <div className="modal-body" data-ask>
+          {bubble?.emotion?.stakes && <p className="why-matters">{bubble.emotion.stakes}</p>}
           {move ? (
             <dl className="decision-grid">
               <dt>What you would do</dt>
@@ -238,7 +249,21 @@ export function DecisionCard() {
             ))}
           </ol>
           {bubble && <MustKnow items={bubble.mustKnow} />}
-          {status !== "done" && <Quiz quiz={m.quiz} context={m.id} onPass={() => setPassed(true)} />}
+          {status !== "done" && !askWhen && <Quiz quiz={m.quiz} context={m.id} onPass={() => setPassed(true)} />}
+          {askWhen && (
+            <div className="when">
+              <p className="when-q">When will you do it?</p>
+              <div className="when-opts">
+                {["Today", "This week", "This weekend", "Next week"].map((w) => (
+                  <button key={w} className="btn" onClick={() => commit(w)}>
+                    {w}
+                  </button>
+                ))}
+              </div>
+              <p className="fine">Picking a moment makes it far more likely to happen. You can change it any time.</p>
+            </div>
+          )}
+          {status === "active" && when && !askWhen && <p className="planned">Planned for: {when.toLowerCase()}</p>}
           {status === "done" && <p className="quiz-fb ok">Marked as done. Your projected score updates right away. It becomes your real score when your next Sherpas update confirms it.</p>}
         </div>
         <footer className="modal-foot">
@@ -269,19 +294,38 @@ export function DecisionCard() {
                 disabled={!passed}
                 onClick={() => {
                   markUnderstood(m.bubbleId);
+                  useStore.getState().addMission(m.id);
                   setMissionStatus(m.id, "done", { via: "quiz" });
+                  close();
                 }}
               >
                 {passed ? "Mark as understood" : "Answer the check first"}
               </button>
             )
           ) : status === "todo" ? (
-            <button className="btn primary" disabled={!understood} onClick={() => setMissionStatus(m.id, "active", { decision_confirmed: true })}>
-              {understood ? "I will do this" : "Answer the check first"}
-            </button>
-          ) : status !== "done" ? (
-            <button className="btn primary" onClick={() => setMissionStatus(m.id, "done", { self_reported: true })}>
-              Mark as done
+            !askWhen && (
+              <button
+                className="btn primary"
+                disabled={!understood}
+                onClick={() => {
+                  setMissionStatus(m.id, "active", { decision_confirmed: true });
+                  useStore.getState().addMission(m.id);
+                  sfx("pop");
+                  setAskWhen(true);
+                }}
+              >
+                {understood ? "I will do this" : "Answer the check first"}
+              </button>
+            )
+          ) : askWhen ? null : status !== "done" ? (
+            <button
+              className="btn primary"
+              onClick={() => {
+                setMissionStatus(m.id, "done", { self_reported: true });
+                close();
+              }}
+            >
+              I did it
             </button>
           ) : (
             <button className="btn" onClick={() => setMissionStatus(m.id, "active", { undone: true })}>

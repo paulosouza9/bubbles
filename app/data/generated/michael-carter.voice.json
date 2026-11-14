@@ -1,0 +1,37 @@
+{
+ "hash": "967852297c70cf77",
+ "voice": {
+  "cashflow": {
+   "inside": "You bring in $180,000 a year before taxes, but after taxes and spending your cash flow is -$8,336 a year.",
+   "deeper": "You save $43,000 a year, including a $7,000 employer match; expenses are $66,000 and taxes are $40,664."
+  },
+  "cushion": {
+   "inside": "You have $30,000 available now, which covers about 3.2 months of expenses. Adding the January 2027 home payment and vacation raises your cash target to $163,330 to $172,636.",
+   "deeper": "The recommended reserve is $46,530 to $55,836, the January 2027 home payment is $113,300 and the vacation is $3,500; after setting those aside you'll have 0 months covered."
+  },
+  "retirement": {
+   "inside": "Savings run out at age 85, leaving $32,439 of planned retirement spending unpaid. Social Security covers about 34% of your $89,649 yearly retirement need.",
+   "deeper": "At retirement your net worth is $1,535,457 with $1,071,095 liquid. Guaranteed income averages $30,036 a year, leaving $59,613 a year to come from savings; the retirement-account gap in today's dollars is $1,177,586, and closing it projects to require $20,231 more per year."
+  },
+  "debt": {
+   "inside": "Total debt is $28,500 with annual payments of $11,400. Your Amex Platinum balance of $3,500 is projected to be paid off by July 2028 if you continue $200 a month.",
+   "deeper": "Your total debt equals about 15.83% of your income, and your housing-plus-debt payments are 25.37% of income, which is below the 36% threshold."
+  },
+  "protection": {
+   "inside": "You have $180,000 of life insurance while the plan recommends $900,000 to $1,800,000. You have no umbrella liability coverage even though $1,000,000 is recommended.",
+   "deeper": "Because your income is the only household income, this protection gap matters for covering debts like your $15,000 car loan, $10,000 student loan, and $3,500 credit card."
+  },
+  "investments": {
+   "inside": "You hold $145,000 of invested savings, which is 58.7% of $247,000 in total assets. Your current mix is 59% stocks versus a 67% target for Growth.",
+   "deeper": "Recorded holdings include VTI $60,000, VWO $22,000, SCHD $20,000, and SCHP $18,000. The plan notes 73.5% of assets are in stocks versus a 98% target for your horizon, recommends rebuilding your emergency reserve and paying the $3,500 credit card before adding to retirement, and says you could add up to $7,500 to your 401(k) or $4,500 to a Roth IRA within the limits noted."
+  },
+  "score": {
+   "inside": "That puts you in the critical band. The two areas pulling it down most are savings and cash flow, at 0 of 25, and insurance and protection, at 4 of 20.",
+   "deeper": "Debt scores 8/10 and investments 11/25. The plan highlights that adding $1M of umbrella cover would raise your score to 31."
+  },
+  "assumptions": {
+   "inside": "The plan assumes you retire at 58 and runs to age 91. It assumes prices rise 3% a year and investments grow 7.76% a year.",
+   "deeper": "Salary of $180,000 is assumed to continue until 2047 and Social Security is assumed to start in 2056. The plan also assumes a $3,500 annual vacation and a $550,000 home purchase in 2027."
+  }
+ }
+}

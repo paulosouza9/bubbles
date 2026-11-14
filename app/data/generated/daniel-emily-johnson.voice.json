@@ -1,0 +1,41 @@
+{
+ "hash": "168b36d81e99da3c",
+ "voice": {
+  "cashflow": {
+   "inside": "That's what's left after taxes, bills, and savings—your monthly leftovers to split between goals.",
+   "deeper": "Your income for the year is $280,000, and yearly savings total $26,000, allocated $8,000 to the 529 and $12,000 to a taxable account. Closing the retirement-account gap is projected to require $34,165 a year."
+  },
+  "cushion": {
+   "inside": "That covers only a little over a month of essentials; it's like a small spare tire when you need a full-size one.",
+   "deeper": "The recommended emergency reserve is $106,860 to $120,218, leaving an $87,860 shortfall. Setting aside the $4,500 vacation fund increases the shortfall to $92,360."
+  },
+  "retirement": {
+   "inside": "Your plan projects retirement spending need of $124,071 a year. Social Security covers about half, so savings must fund the remainder.",
+   "deeper": "Extra yearly savings projected to close the gap are $34,165 a year."
+  },
+  "debt": {
+   "inside": "Most of the balance is mortgage debt, and one credit card carries a much higher interest rate than the others.",
+   "deeper": "Total debt equals 220.71% of your income, with a $560,000 mortgage at 6.5%. The high-rate card's $450 monthly payment is projected to finish in January 2034, and housing plus debt payments are 27.25% of income."
+  },
+  "protection": {
+   "inside": "Daniel has $250,000 life insurance and Emily has $200,000. Recommended ranges are much higher, and there’s no umbrella policy in place.",
+   "deeper": "Recommended coverage for Daniel is $1,600,000 to $2,400,000, leaving a shortfall of $1,350,000; Emily's recommended range is $1,200,000 to $1,800,000, leaving a $1,000,000 shortfall. An umbrella liability policy of $1,000,000 is recommended."
+  },
+  "college": {
+   "inside": "You’ve got some saved in 529s and make annual contributions, but you still face a remaining need. Think of the 529 as a partially filled college jar.",
+   "deeper": "Oliver still needs $50,742 and starts August 2033; Sophia needs $55,810 and starts August 2035."
+  },
+  "investments": {
+   "inside": "You also have $250,000 in 401(k)s with no contributions today, and your portfolio is heavier in cash and bonds than the plan target.",
+   "deeper": "Today’s mix is 54% stocks, 36% bonds, 10% cash versus a target of 66% stocks, 27% bonds, 6% cash."
+  },
+  "score": {
+   "inside": "You’re in the plan’s vulnerable band, with insurance and protection dragging the total down.",
+   "deeper": "Liquidity is a strength at 13/15 points. The plan’s top move is adding $1,166,000 of life cover to reach the next mortality-coverage anchor."
+  },
+  "assumptions": {
+   "inside": "Your plan assumes Daniel retires at 62 and Emily at 60, with prices rising 3% a year and investments growing 7.58% annually.",
+   "deeper": "The plan runs to age 91; Daniel’s salary is set at $160,000 and Emily’s at $120,000 through 2044. Social Security is assumed to start for Daniel in 2049 and for Emily in 2051."
+  }
+ }
+}

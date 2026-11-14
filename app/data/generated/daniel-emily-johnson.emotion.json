@@ -1,0 +1,44 @@
+{
+ "hash": "f30ec772b2c9c5ce",
+ "emotion": {
+  "anchor": "This plan protects Oliver and Sophia's steady life and your future choices.",
+  "topics": {
+   "cashflow": {
+    "stakes": "Having reliable cash flow lets you choose extra time with Oliver and Sophia and steady progress toward your goals.",
+    "hope": "Confirm your employer 401(k) match — a quick step that moves your score from 52 to 55."
+   },
+   "cushion": {
+    "stakes": "An accessible cushion gives you calm confidence to handle short surprises without changing Oliver and Sophia’s routine.",
+    "hope": "Knowing your current cushion shows how much accessible cash to add and which months need padding."
+   },
+   "retirement": {
+    "stakes": "A solid retirement plan makes retiring at 62 and 60 mean steady income and time together on your terms.",
+    "hope": "Understanding your retirement gap shows which changes will make retiring at 62 and 60 feel secure."
+   },
+   "debt": {
+    "stakes": "Reducing high-rate debt gives you steadier monthly cash and more freedom to fund family priorities.",
+    "hope": "Seeing your debt picture shows which balances to tackle first and how that frees monthly money."
+   },
+   "protection": {
+    "stakes": "Proper protection lets Daniel and Emily keep Oliver and Sophia secure and preserve your family's lifestyle if incomes change.",
+    "hope": "Adding life coverage (score 52 to 57) and buying an umbrella policy (score 52 to 56) will strengthen your protection."
+   },
+   "college": {
+    "stakes": "Making college funding reliable keeps Oliver and Sophia able to choose the schools you want without derailing other goals.",
+    "hope": "Knowing the college gap shows how your 529 savings and annual contributions translate into real choices for Oliver and Sophia."
+   },
+   "investments": {
+    "stakes": "Getting investments aligned gives you confidence that savings will grow to support retirement, college, and vacations as planned.",
+    "hope": "Seeing your asset mix shows which changes will bring your portfolio closer to the plan target and your goals."
+   },
+   "score": {
+    "stakes": "Raising your overall score makes pursuing goals feel clearer and helps you act with more confidence as a family.",
+    "hope": "Knowing your overall score highlights which areas—especially protection—will most improve your family's security."
+   },
+   "assumptions": {
+    "stakes": "Clear assumptions let you make decisions today that actually produce the retirement and vacations you imagine.",
+    "hope": "Understanding the plan's assumptions shows how small changes now change outcomes at retirement and college."
+   }
+  }
+ }
+}
