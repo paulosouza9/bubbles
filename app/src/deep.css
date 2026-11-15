@@ -193,7 +193,7 @@
 .out-hero b {
   font-size: clamp(3.6rem, 10vmin, 6.4rem);
   font-weight: 700;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.05em;
   line-height: 0.88;
   color: var(--ink);
 }
@@ -292,7 +292,19 @@
   margin-top: 0.2rem;
 }
 .out-cta .btn.primary {
-  box-shadow: none;
+  box-shadow: 0 10px 26px rgba(0, 113, 227, 0.32);
+  animation: invite 2.8s 2s ease-in-out infinite;
+}
+@keyframes invite {
+  0%,
+  100% {
+    box-shadow: 0 10px 26px rgba(0, 113, 227, 0.32);
+  }
+  50% {
+    box-shadow:
+      0 10px 26px rgba(0, 113, 227, 0.32),
+      0 0 0 9px rgba(0, 113, 227, 0.1);
+  }
 }
 @media (max-width: 860px), (max-aspect-ratio: 23/20) {
   .out-panel {
@@ -332,7 +344,7 @@
   z-index: 14;
   padding: 0 4px;
 }
-/* The visible dots stay small; their click targets and focus rings do not. */
+/* Keep the larger targets and the named current bubble in the top strip. */
 .seq > button:not(.seq-all) {
   flex-shrink: 0;
   position: relative;
@@ -646,7 +658,9 @@
   display: grid;
   place-items: center;
   padding: 0;
-  background: var(--surface);
+  background: rgba(255, 255, 255, 0.96);
+  -webkit-backdrop-filter: blur(22px) saturate(160%);
+  backdrop-filter: blur(22px) saturate(160%);
   animation: bubble-in 0.6s cubic-bezier(0.25, 0.9, 0.3, 1) both;
   pointer-events: auto !important;
 }
@@ -743,11 +757,16 @@
   transform: scale(1.06);
 }
 
-/* ---- Keep the chat readable over the 3D scene ------------------------------------------- */
+/* ---- The chat becomes loose bubbles, not a sheet ------------------------------------------- */
 .app.deep .chat-sheet.glass {
-  background: var(--surface);
+  background: rgba(255, 255, 255, 0.9);
   border: 0;
-  box-shadow: var(--shadow);
+  box-shadow: none;
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  -webkit-mask-image: linear-gradient(transparent, #000 14%);
+  mask-image: linear-gradient(transparent, #000 14%);
+  padding-top: 1.2rem;
 }
 
 @media (max-width: 860px) {
@@ -1040,7 +1059,8 @@
   text-shadow: 0 0 12px #fff, 0 0 12px #fff;
 }
 .act-btn.primary {
-  box-shadow: none;
+  box-shadow: 0 10px 26px rgba(0, 113, 227, 0.32);
+  animation: invite 2.8s 1.2s ease-in-out infinite;
 }
 .act.done .act-btn {
   color: #1e7b3c;
@@ -1346,7 +1366,9 @@
   z-index: 40;
   display: grid;
   place-items: center;
-  background: var(--surface);
+  background: rgba(250, 251, 255, 0.94);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  backdrop-filter: blur(18px) saturate(150%);
   animation: fade 0.35s both;
   overflow-y: auto;
   padding: calc(var(--top) + 16px) 16px calc(var(--chat) + 16px);
@@ -1376,19 +1398,19 @@
   align-items: center;
   gap: 0.8rem;
   text-align: left;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--surface);
-  padding: 0.85rem;
-  transition: border-color 0.2s, background 0.2s;
+  border: 0;
+  border-radius: 999px 22px 22px 999px;
+  background: rgba(255, 255, 255, 0.8);
+  padding: 0.5rem 0.9rem 0.5rem 0.5rem;
+  box-shadow: 0 2px 10px rgba(29, 43, 79, 0.06);
+  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.25s;
 }
 .ov-tile:hover {
-  border-color: #aeb8c6;
-  background: var(--fill);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 26px rgba(29, 43, 79, 0.12);
 }
 .ov-tile.here {
-  border-color: var(--blue);
-  background: #f0f6ff;
+  box-shadow: 0 0 0 2px var(--blue), 0 10px 26px rgba(29, 43, 79, 0.1);
 }
 .ov-orb {
   flex: none;
@@ -1866,7 +1888,7 @@
   align-items: stretch;
   gap: 0.15rem;
   padding: 0.35rem;
-  border-radius: var(--radius);
+  border-radius: 22px;
   animation: fade 0.5s 0.3s both;
 }
 .zr-step {
@@ -1879,9 +1901,9 @@
   color: var(--ink);
   font-weight: 650;
   font-size: 0.86rem;
-  border-radius: 10px;
-  min-height: 44px;
+  border-radius: 16px;
   padding: 0.5rem 0.7rem;
+  box-shadow: 0 2px 8px rgba(29, 43, 79, 0.08);
   transition: background 0.2s, transform 0.2s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .zr-step:hover:not(:disabled) {
@@ -1930,7 +1952,6 @@
   font-weight: 550;
   color: #545458;
   position: relative;
-  min-height: 40px;
 }
 .zr-stops button:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.8);
@@ -2020,8 +2041,6 @@
   .zr-stops button {
     justify-content: center;
     padding: 0.45rem;
-    min-width: 44px;
-    min-height: 44px;
   }
   .zr-stops::before {
     right: auto;
@@ -2050,6 +2069,11 @@
 /* ---- The path at the top: named current stop, filled = seen, hollow = still to come ------- */
 .seq.glass {
   top: calc(var(--top) + 8px);
+  background: rgba(255, 255, 255, 0.97);
+  border: 1px solid var(--line);
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
   padding: 3px 6px;
   border-radius: 999px;
   gap: 0;
@@ -2642,7 +2666,7 @@ html.calm-motion .tour-ring {
   color: var(--grey);
 }
 
-/* On phones, navigation gets its own band instead of sitting over the story. */
+
 @media (max-width: 600px) {
   .seq.glass {
     max-width: calc(100vw - 24px);
@@ -2651,124 +2675,5 @@ html.calm-motion .tour-ring {
   }
   .seq-now {
     max-width: 44vw;
-  }
-  .zoom-rail {
-    top: auto;
-    bottom: calc(var(--chat) + 2px);
-    left: 12px;
-    right: 12px;
-    flex-direction: row;
-    align-items: center;
-    gap: 0;
-  }
-  .zr-stops {
-    flex: 1;
-    min-width: 0;
-    flex-direction: row;
-    margin: 0;
-  }
-  .zr-stops li {
-    flex: 1;
-    min-width: 0;
-  }
-  .zr-stops::before {
-    display: none;
-  }
-  .zr-stops button {
-    min-width: 0;
-    padding: 0.35rem 0.15rem;
-    font-size: 0.68rem;
-    line-height: 1.2;
-  }
-  .zr-stops button.on {
-    background: #eaf3ff;
-  }
-  .zr-stops i {
-    display: none;
-  }
-  .zr-name {
-    display: block;
-  }
-  .stage.deep {
-    bottom: calc(var(--chat) + 70px);
-  }
-  .out-panel {
-    top: min(28vh, 210px);
-    bottom: 0;
-    left: 12px;
-    right: 12px;
-    width: auto;
-    transform: none;
-    padding: 1rem;
-    align-items: stretch;
-    text-align: left;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    border-radius: var(--radius);
-    background: rgba(255, 255, 255, 0.97);
-    scrollbar-width: thin;
-  }
-  .out-title {
-    font-size: 1.75rem;
-  }
-  .out-hero {
-    justify-items: start;
-    align-items: center;
-  }
-  .out-hero b {
-    font-size: 3.5rem;
-  }
-  .out-hero span {
-    font-size: 0.8rem;
-    padding-bottom: 0;
-  }
-  .out-cta {
-    align-items: flex-start;
-    gap: 0.65rem;
-    position: sticky;
-    bottom: -1rem;
-    background: var(--surface);
-    padding-block: 0.75rem;
-    border-top: 1px solid var(--line);
-  }
-  .out-cta .btn.big {
-    padding: 0.7rem 1rem;
-    font-size: 0.95rem;
-  }
-  .out-hint {
-    top: calc(var(--top) + 62px);
-    bottom: auto;
-    max-width: 65vw;
-    padding: 0.35rem 0.65rem;
-    font-size: 0.7rem;
-  }
-  .app.deep .nav-arrow.prev,
-  .app.deep .nav-arrow.next {
-    top: calc(var(--top) + 62px) !important;
-    bottom: auto !important;
-    width: 44px !important;
-    min-width: 44px;
-    height: 44px;
-  }
-  .inside {
-    padding-inline: 12px;
-  }
-  .inside .in-line,
-  .inside .in-line.karaoke {
-    max-width: 100%;
-  }
-  .zoom-hint {
-    top: auto;
-    bottom: calc(var(--chat) + 70px);
-    right: 12px;
-  }
-  .zoom-hint::before {
-    top: auto;
-    bottom: -7px;
-  }
-  .app.deep.phase-journey .toast,
-  .app.deep.phase-cloud .toast {
-    right: 12px;
-    width: calc(100vw - 24px);
   }
 }

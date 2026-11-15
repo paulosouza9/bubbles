@@ -122,12 +122,11 @@ function Rig({ layout, cloud }) {
     } else if (s.level >= 3) {
       // Outside: the bubble sits to one side and its story to the other (below, on a phone).
       const wide = aspect > 1.15;
-      const phone = aspect < 0.75;
-      const fill = wide ? 0.66 : phone ? 0.24 : 0.42;
+      const fill = wide ? 0.66 : 0.42;
       const d = Math.max(R / (TAN * fill), R / (TAN * aspect * (wide ? 0.5 : 0.82)));
       const halfW = TAN * d * aspect;
       const sx = wide ? halfW * 0.4 : 0;
-      const sy = wide ? -0.12 : -TAN * d * (phone ? 0.44 : 0.36);
+      const sy = wide ? -0.12 : -TAN * d * 0.36;
       p = [sx, sy, d];
       l = [sx, sy, 0];
     } else {
