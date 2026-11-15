@@ -60,12 +60,18 @@ export function speechLevel() {
 }
 export const isSpeaking = () => speech.mode !== "off";
 
-export function stopSpeaking() {
+// stopSpeaking("mute") ends the current line as if it had finished, so whatever was waiting
+// for it (the greeting, the next sentence, the action moment) carries on.
+let pendingEnd = null;
+export function stopSpeaking(reason) {
   token++;
   if (current) current.stop();
   current = null;
   speech.mode = "off";
   if (typeof speechSynthesis !== "undefined") speechSynthesis.cancel();
+  const end = pendingEnd;
+  pendingEnd = null;
+  if (reason === "mute" && end) end(true);
 }
 
 function pickBrowserVoice(kind) {
@@ -86,9 +92,11 @@ export function speak(text, opts = {}) {
     if (my === token) {
       current = null;
       speech.mode = "off";
+      pendingEnd = null;
     }
     opts.onEnd?.(finished);
   };
+  pendingEnd = (finished) => opts.onEnd?.(finished);
   const synthetic = () => {
     speech.mode = "synthetic";
     speech.start = performance.now() / 1000;

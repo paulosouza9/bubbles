@@ -144,14 +144,25 @@ export function Podcast({ onDone }) {
 export function Checkin({ onDone }) {
   const family = useStore((s) => s.family);
   const person = useStore((s) => s.person);
-  const { list } = useMissions();
+  const { list, statuses } = useMissions();
   const [msgs, setMsgs] = useState([]);
   const [next, setNext] = useState(null);
   const [busy, setBusy] = useState(false);
   const [text, setText] = useState("");
   const [finished, setFinished] = useState(false);
   const box = useRef();
-  const missions = list.map((m) => ({ id: m.id, title: m.title }));
+  // What is ticked right now travels with every message, so the AI always knows.
+  const missions = list.map((m, i) => ({ id: m.id, title: m.title, status: statuses[i] }));
+  const ticks = useRef(null);
+  useEffect(() => {
+    // A tick (or untick) during the conversation shows up in it, as a quiet note.
+    const now = Object.fromEntries(list.map((m, i) => [m.id, statuses[i] === "done"]));
+    const prev = ticks.current;
+    ticks.current = now;
+    if (!prev) return;
+    const changed = list.filter((m) => prev[m.id] !== undefined && prev[m.id] !== now[m.id]);
+    if (changed.length) setMsgs((ms) => [...ms, ...changed.map((m) => ({ role: "note", text: now[m.id] ? `Ticked: ${m.title}` : `Unticked: ${m.title}` }))]);
+  }, [statuses.join(",")]);
   const sayAll = (arr) => {
     setMsgs((m) => [...m, ...arr.map((t) => ({ role: "assistant", text: t }))]);
     speak(arr.join(" "));
@@ -177,7 +188,7 @@ export function Checkin({ onDone }) {
       const st = useStore.getState();
       if (r.updates?.mission) {
         const map = { done: "done", in_progress: "active", not_done: st.missions.status[r.updates.mission.id] === "done" ? "done" : st.missions.status[r.updates.mission.id] || "todo" };
-        st.setMissionStatus(r.updates.mission.id, map[r.updates.mission.status], { via: "checkin", blocker: r.updates.mission.blocker });
+        st.setMissionStatus(r.updates.mission.id, map[r.updates.mission.status], { via: "checkin", blocker: r.updates.mission.blocker, quiet: true });
       }
       if (r.updates?.intakeChange) st.addNote("intakeChanges", r.updates.intakeChange);
       if (r.updates?.worry) st.addNote("worries", r.updates.worry);
@@ -236,7 +247,9 @@ export function Picker() {
   const suggested = useStore(useShallow((s) => nextIds(s)));
   const month = useStore((s) => s.missions.month);
   const [sel, setSel] = useState(suggested);
+  const [confirm, setConfirm] = useState(false);
   const start = useStore((s) => s.startNextMonth);
+  const carry = useStore(useShallow((s) => s.missions.active.filter((id) => s.missions.status[id] !== "done")));
   const toggle = (id) => setSel((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : cur.length < 3 ? [...cur, id] : cur));
   return (
     <div className="picker">
@@ -247,143 +260,31 @@ export function Picker() {
             <input type="checkbox" checked={sel.includes(m.id)} onChange={() => toggle(m.id)} />
             <span>
               <span className="m-type">
-                {m.type === "understand" ? "Understand" : m.type === "quick" ? "Quick" : "Important"} · about {m.minutes} min
+                {{ understand: "Understand", quick: "Quick", important: "Important", practical: "Practical" }[m.type] || "Mission"} · about {m.minutes} min
               </span>
               <b>{m.title}</b>
             </span>
           </label>
         ))}
       </div>
-      <button className="btn primary" disabled={!sel.length} onClick={() => start(sel)}>
-        Start month {month + 1} with {sel.length} mission{sel.length === 1 ? "" : "s"}
-      </button>
-    </div>
-  );
-}
-
-export function Month() {
-  const plan = useStore((s) => s.plan);
-  const { list, statuses, month } = useMissions();
-  const proj = useStore(useShallow((s) => s.projected()));
-  const asked = useStore((s) => s.asked);
-  const notes = useStore((s) => s.notes);
-  const { setPhase, openDecision } = useStore.getState();
-  const [tab, setTab] = useState("review");
-  const [checked, setChecked] = useState(false);
-  const year = new Date().getFullYear();
-  const upcoming = (plan.bubbles.find((b) => b.id === "retirement")?.miniapp.data.goals || [])
-    .filter((g) => (g.endYear || g.year) >= year)
-    .sort((a, b) => a.year - b.year)
-    .slice(0, 3);
-  const questions = Object.entries(asked).flatMap(([bid, qs]) => qs.filter((q) => q.month === month).map((q) => ({ ...q, title: plan.bubbles.find((b) => b.id === bid)?.title })));
-  const done = statuses.filter((s) => s === "done").length;
-  return (
-    <div className="month-wrap">
-      <section className="glass month" aria-label="Month-end review">
-        <header className="sheet-head">
-          <div>
-            <div className="eyebrow">Month {month} in review</div>
-            <h2>
-              {done === list.length && list.length ? "You closed the ring." : done ? `${done} of ${list.length} missions done.` : "Here is where things stand."}
-            </h2>
-          </div>
-          <button className="btn" onClick={() => setPhase("cloud")}>
-            Back to the map
+      {/* Starting a month closes this one, so it asks once before it happens. */}
+      {confirm ? (
+        <div className="confirm-row" role="group" aria-label="Confirm the new month">
+          <p>
+            This closes month {month}.{carry.length ? ` ${carry.length === 1 ? "One unfinished mission comes" : `${carry.length} unfinished missions come`} with you if you keep ${carry.length === 1 ? "it" : "them"} selected.` : ""}
+          </p>
+          <button className="btn" onClick={() => setConfirm(false)}>
+            Not yet
           </button>
-        </header>
-        <div className="seg wide" role="tablist">
-          {[
-            ["review", "Review"],
-            ["podcast", "Listen as a podcast"],
-            ["checkin", "Check-in"],
-            ["next", "Next month"],
-          ].map(([v, label]) => (
-            <button key={v} role="tab" aria-selected={tab === v} className={tab === v ? "on" : ""} onClick={() => { stopSpeaking(); setTab(v); }}>
-              {label}
-            </button>
-          ))}
+          <button className="btn primary" autoFocus onClick={() => start(sel)}>
+            Start month {month + 1}
+          </button>
         </div>
-        <div className="month-body">
-          {tab === "review" && (
-            <div className="review">
-              <div className="review-top">
-                <ScoreRing score={plan.score.value} projected={proj.score} size={128} />
-                <div>
-                  <div className="ring-row">
-                    <Ring statuses={statuses} size={52} />
-                    <b>
-                      {done} of {list.length} missions done
-                    </b>
-                  </div>
-                  <p className="mute small">
-                    Published score {plan.score.value}.{proj.score !== plan.score.value ? ` Projected ${proj.score}, once your next Sherpas update confirms what you did.` : " No change projected yet."}
-                  </p>
-                </div>
-              </div>
-              <h3>Your missions</h3>
-              <div className="mission-list">
-                {list.map((m, i) => (
-                  <MissionRow key={m.id} m={m} status={statuses[i]} onOpen={() => openDecision(m.id)} />
-                ))}
-              </div>
-              {questions.length > 0 && (
-                <>
-                  <h3>What you asked this month</h3>
-                  <ul className="analysis">
-                    {questions.slice(-5).map((q, i) => (
-                      <li key={i}>
-                        <span className="mute">{q.title}:</span> {q.quote ? `“${q.quote}” ` : ""}
-                        {q.q}
-                      </li>
-                    ))}
-                  </ul>
-                </>
-              )}
-              {(notes.intakeChanges?.length > 0 || notes.worries?.length > 0) && (
-                <>
-                  <h3>Noted for your advisor's firm</h3>
-                  <ul className="analysis">
-                    {notes.intakeChanges?.map((n, i) => (
-                      <li key={`c${i}`}>
-                        <span className="mute">Update the intake:</span> {n.text}
-                      </li>
-                    ))}
-                    {notes.worries?.map((n, i) => (
-                      <li key={`w${i}`}>
-                        <span className="mute">On your mind:</span> {n.text}
-                      </li>
-                    ))}
-                  </ul>
-                </>
-              )}
-              {upcoming.length > 0 && (
-                <>
-                  <h3>Coming up in your plan</h3>
-                  <div className="legend">
-                    {upcoming.map((g) => (
-                      <span key={g.name} className="chip static">
-                        <i style={{ background: "#FF9F0A" }} />
-                        {g.name} · {g.year}
-                      </span>
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
-          )}
-          {tab === "podcast" && <Podcast onDone={() => setTab("checkin")} />}
-          {tab === "checkin" && <Checkin onDone={() => setChecked(true)} />}
-          {tab === "next" && <Picker />}
-        </div>
-        {tab === "checkin" && checked && (
-          <footer className="modal-foot">
-            <span className="grow" />
-            <button className="btn primary" onClick={() => setTab("next")}>
-              Choose next month's missions
-            </button>
-          </footer>
-        )}
-      </section>
+      ) : (
+        <button className="btn primary" disabled={!sel.length} onClick={() => setConfirm(true)}>
+          Start month {month + 1} with {sel.length} mission{sel.length === 1 ? "" : "s"}
+        </button>
+      )}
     </div>
   );
 }
@@ -391,7 +292,7 @@ export function Month() {
 // Inside the last bubble: this month's missions around the score ring, and the month-end
 // review as a podcast, a check-in and the choice of next month's missions.
 export function StepsInside() {
-  const tab = useStore((s) => s.monthTab);
+  const tab = "missions";
   const setTab = useStore((s) => s.setMonthTab);
   const plan = useStore((s) => s.plan);
   const { list, statuses, month } = useMissions();
@@ -401,28 +302,25 @@ export function StepsInside() {
   const [notesOpen, setNotesOpen] = useState(false);
   const done = statuses.filter((s) => s === "done").length;
   const questions = Object.entries(asked).flatMap(([bid, qs]) => qs.filter((q) => q.month === month).map((q) => ({ ...q, title: plan.bubbles.find((b) => b.id === bid)?.title })));
-  const tabs = [
-    ["missions", "Missions"],
-    ["podcast", "Listen"],
-    ["checkin", "Check-in"],
-    ["next", "Next month"],
-  ];
+  const tabs = [];
+  const { openMonthPage, openMeeting } = useStore.getState();
   return (
     <div className={`inside steps tab-${tab}`}>
       <header className="in-head">
-        <h2>Month {month}</h2>
-        <div className="seg" role="tablist">
-          {tabs.map(([v, label]) => (
-            <button key={v} role="tab" aria-selected={tab === v} className={tab === v ? "on" : ""} onClick={() => setTab(v)}>
-              {label}
-            </button>
-          ))}
+        <div>
+          <div className="eyebrow">Month {month}</div>
+          <h1>Your plan of action</h1>
         </div>
+
       </header>
       {tab === "missions" && plan.texts?.anchor && <p className="anchor-line">{plan.texts.anchor}</p>}
       {tab === "missions" && (
         <p className="in-line small-line">
-          {done === list.length && list.length ? "You closed the ring." : `${done} of ${list.length} done.`} Tap a mission to open it.
+          {!list.length
+            ? "No missions this month yet. Choose them in Next month."
+            : done === list.length
+              ? "You closed the ring."
+              : `${list.length === 1 ? "One step" : `${list.length} steps`} for this month, ${done} done. Tap one to open it.`}
         </p>
       )}
       {tab === "podcast" && (
@@ -450,8 +348,11 @@ export function StepsInside() {
               <button className="btn" onClick={() => setNotesOpen(true)}>
                 What I noted this month
               </button>
-              <button className="btn primary" onClick={() => setTab("podcast")}>
-                Month-end review ›
+              <button className="btn" onClick={openMeeting}>
+                Month-end meeting
+              </button>
+              <button className="btn primary" onClick={openMonthPage}>
+                Open this month ›
               </button>
             </div>
           </>

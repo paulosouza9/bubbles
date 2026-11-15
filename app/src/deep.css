@@ -53,6 +53,8 @@
   color: #c4271b;
 }
 .t3.verdict {
+  display: block;
+  text-align: center;
   white-space: normal;
   width: max-content;
   max-width: min(84vw, 80vmin);
@@ -333,31 +335,77 @@
 /* ---- The row of dots (one per bubble) and the arrows ----------------------------------- */
 .seq {
   position: fixed;
-  top: calc(var(--top) + 2px);
+  top: calc(var(--top) - 6px);
   left: 50%;
   transform: translateX(-50%);
   display: flex;
-  gap: 7px;
+  gap: 2px;
   align-items: center;
   z-index: 14;
-  padding: 6px 4px;
+  padding: 0 4px;
 }
-.seq button {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
+/* Each dot sits in a 28px target; its name shows on hover and keyboard focus. */
+.seq > button:not(.seq-all) {
+  position: relative;
+  width: 28px;
+  height: 28px;
   border: 0;
   padding: 0;
+  background: none;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+}
+.seq > button:not(.seq-all) i {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
   background: var(--c, #8e8e93);
-  opacity: 0.35;
-  transition: all 0.3s cubic-bezier(0.3, 1.5, 0.5, 1);
+  opacity: 0.4;
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s;
 }
-.seq button.now {
+.seq > button.now i {
   opacity: 1;
-  transform: scale(1.7);
+  transform: scale(1.5);
 }
-.seq button:hover {
-  opacity: 0.8;
+.seq > button:not(.seq-all):hover i {
+  opacity: 0.85;
+}
+.seq > button[data-label]::after {
+  content: attr(data-label);
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translate(-50%, 4px);
+  white-space: nowrap;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.96);
+  border-radius: 8px;
+  padding: 0.25rem 0.55rem;
+  box-shadow: 0 4px 14px rgba(29, 43, 79, 0.14);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s;
+}
+.seq > button[data-label]:hover::after,
+.seq > button[data-label]:focus-visible::after {
+  opacity: 1;
+}
+.seq-all {
+  margin-left: 6px;
+  border: 0;
+  background: rgba(236, 236, 240, 0.85);
+  color: var(--ink);
+  font-size: 0.76rem;
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 0.28rem 0.7rem;
+  min-height: 26px;
+}
+.seq-all:hover {
+  background: #e3e3e8;
 }
 .nav-arrow {
   position: fixed;
@@ -371,7 +419,7 @@
   display: grid;
   place-items: center;
   z-index: 18;
-  transition: transform 0.2s cubic-bezier(0.3, 1.5, 0.5, 1);
+  transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .nav-arrow:hover {
   transform: scale(1.1);
@@ -418,11 +466,15 @@
   align-items: center;
   gap: 0.2rem;
 }
+.in-head h1,
 .in-head h2 {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   font-size: clamp(1.1rem, 2.6vmin, 1.5rem);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
 }
 .in-line {
   animation: fade 0.45s ease both;
@@ -605,7 +657,7 @@
   display: grid;
   place-items: center;
   padding: 0;
-  background: radial-gradient(circle at 50% 42%, rgba(255, 255, 255, 0.985) 0%, rgba(255, 255, 255, 0.95) 48%, rgba(238, 243, 255, 0.93) 100%);
+  background: rgba(255, 255, 255, 0.96);
   -webkit-backdrop-filter: blur(22px) saturate(160%);
   backdrop-filter: blur(22px) saturate(160%);
   animation: bubble-in 0.6s cubic-bezier(0.25, 0.9, 0.3, 1) both;
@@ -662,13 +714,13 @@
 .app.deep .quiz-opt {
   border-radius: 999px;
   padding: 0.7rem 1.1rem;
-  transition: transform 0.2s cubic-bezier(0.3, 1.5, 0.5, 1);
+  transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .app.deep .quiz-opt:hover {
   transform: scale(1.02);
 }
 .app.deep .quiz-opt.right {
-  animation: yes 0.5s cubic-bezier(0.3, 1.6, 0.5, 1);
+  animation: yes 0.5s cubic-bezier(0.22, 1, 0.36, 1);
 }
 @keyframes yes {
   40% {
@@ -698,7 +750,7 @@
 }
 .calib-card:not(.glass) .btn {
   box-shadow: 0 6px 18px rgba(29, 43, 79, 0.12);
-  transition: transform 0.2s cubic-bezier(0.3, 1.5, 0.5, 1);
+  transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .calib-card:not(.glass) .btn:hover {
   transform: scale(1.06);
@@ -706,7 +758,7 @@
 
 /* ---- The chat becomes loose bubbles, not a sheet ------------------------------------------- */
 .app.deep .chat-sheet.glass {
-  background: linear-gradient(rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.88) 22%);
+  background: rgba(255, 255, 255, 0.9);
   border: 0;
   box-shadow: none;
   -webkit-backdrop-filter: blur(10px);
@@ -928,7 +980,7 @@
   transform-origin: center;
   animation-name: popin;
   animation-duration: 0.6s;
-  animation-timing-function: cubic-bezier(0.3, 1.4, 0.5, 1);
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
 }
 @keyframes popin {
   from {
@@ -960,8 +1012,6 @@
   color: var(--ink);
   font-weight: 600;
   letter-spacing: -0.012em;
-  padding-left: 0.9rem;
-  border-left: 3px solid var(--blue);
 }
 .out-lede {
   font-weight: 400 !important;
@@ -999,8 +1049,6 @@
   font-weight: 600;
   line-height: 1.4;
   letter-spacing: -0.012em;
-  padding-left: 0.9rem;
-  border-left: 3px solid var(--blue);
 }
 .when {
   text-align: center;
@@ -1044,7 +1092,7 @@
   z-index: 90;
   display: grid;
   place-items: center;
-  background: radial-gradient(circle at 50% 45%, rgba(255, 255, 255, 0.99) 0%, rgba(255, 255, 255, 0.96) 50%, rgba(232, 246, 237, 0.95) 100%);
+  background: rgba(255, 255, 255, 0.97);
   -webkit-backdrop-filter: blur(20px) saturate(160%);
   backdrop-filter: blur(20px) saturate(160%);
   animation: bubble-in 0.7s cubic-bezier(0.25, 0.9, 0.3, 1) both;
@@ -1054,7 +1102,7 @@
   position: absolute;
   bottom: -60px;
   border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #fff 0 18%, rgba(52, 199, 89, 0.28) 60%, rgba(0, 113, 227, 0.18));
+  background: rgba(0, 113, 227, 0.16);
   border: 1px solid rgba(255, 255, 255, 0.9);
   box-shadow: 0 6px 16px rgba(29, 43, 79, 0.08);
   animation: rise-up linear infinite both;
@@ -1087,7 +1135,7 @@
   display: grid;
   place-items: center;
   margin-bottom: 0.4rem;
-  animation: popin 0.8s 0.2s cubic-bezier(0.3, 1.5, 0.5, 1) both;
+  animation: popin 0.8s 0.2s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 .cel-ring svg text {
   display: none;
@@ -1135,7 +1183,7 @@
 }
 
 .inside .in-bottom:has(.act) {
-  background: linear-gradient(rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.86) 26%);
+  background: rgba(255, 255, 255, 0.88);
   border-radius: 40px 40px 0 0;
   padding-top: 1.6rem;
 }
@@ -1158,4 +1206,1250 @@
 .out-cta .mute.small {
   max-width: 26ch;
   line-height: 1.3;
+}
+
+/* ---- Labels that are buttons, sliders inside the toys -------------------------------------- */
+.t3 {
+  font-size: calc(clamp(11px, 1.75vmin, 16px) * var(--toy-scale, 1));
+}
+.t3.small {
+  font-size: calc(clamp(10.5px, 1.5vmin, 14px) * var(--toy-scale, 1));
+}
+.t3.wrap {
+  white-space: normal;
+  width: max-content;
+  max-width: min(22vw, 17ch);
+  text-wrap: balance;
+}
+.t3.wrap.narrow {
+  max-width: 7.2em;
+}
+.t3-btn {
+  border: 0;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+  border-radius: 10px;
+  padding: 0.2rem 0.35rem;
+  text-shadow: 0 0 8px #fff, 0 0 8px #fff;
+}
+.t3-btn:hover b {
+  color: var(--blue);
+}
+.t3-btn:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+.t3 .planned-t {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.86em;
+  font-weight: 600;
+  color: #1e7b3c;
+}
+.t3-range {
+  width: min(56vw, 440px);
+  accent-color: var(--blue);
+  cursor: pointer;
+  /* Dragging the chart is the main way in; the slider is there for the keyboard and shows on focus. */
+  opacity: 0;
+  pointer-events: none;
+  position: relative;
+  z-index: 2;
+}
+.t3-range:focus-visible {
+  opacity: 1;
+  pointer-events: auto;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 999px;
+  padding: 0.4rem 0.6rem;
+  box-shadow: 0 4px 14px rgba(29, 43, 79, 0.16);
+}
+.toy-space {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  pointer-events: none !important;
+}
+.icon-btn.listen svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* ---- Outside: who this bubble is for you, and the one-time hint --------------------------- */
+.out-role {
+  color: var(--blue);
+  font-weight: 700;
+}
+.out-role + .out-state::before {
+  content: "·";
+  margin-right: 0.45rem;
+  color: var(--faint);
+}
+.out-hint {
+  position: fixed;
+  left: 29%;
+  bottom: calc(var(--chat) + 34px);
+  transform: translateX(-50%);
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 999px;
+  padding: 0.45rem 0.9rem;
+  box-shadow: 0 6px 18px rgba(29, 43, 79, 0.12);
+  animation: fade 0.6s 1.6s both;
+  pointer-events: none;
+}
+.score-help {
+  position: relative;
+  display: inline-flex;
+  vertical-align: middle;
+  margin-left: 0.35rem;
+}
+.score-help .q {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid #c7c7cc;
+  background: #fff;
+  color: var(--grey);
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1;
+}
+.score-help-text {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(300px, 80vw);
+  z-index: 5;
+  font-size: 0.86rem;
+  font-weight: 450;
+  line-height: 1.4;
+  color: var(--ink);
+  background: #fff;
+  border-radius: 14px;
+  padding: 0.7rem 0.85rem;
+  box-shadow: 0 10px 30px rgba(29, 43, 79, 0.16);
+}
+
+/* ---- All topics: every bubble at once, one zoom out from the path -------------------------- */
+.overview {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  background: rgba(250, 251, 255, 0.94);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  backdrop-filter: blur(18px) saturate(150%);
+  animation: fade 0.35s both;
+  overflow-y: auto;
+  padding: calc(var(--top) + 16px) 16px calc(var(--chat) + 16px);
+}
+.ov-col {
+  width: min(980px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.ov-col h2 {
+  font-size: clamp(1.5rem, 3.4vmin, 2.2rem);
+  letter-spacing: -0.02em;
+}
+.ov-grid {
+  list-style: none;
+  padding: 0;
+  margin: 0.8rem 0 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.9rem;
+}
+.ov-tile {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  text-align: left;
+  border: 0;
+  border-radius: 999px 22px 22px 999px;
+  background: rgba(255, 255, 255, 0.8);
+  padding: 0.5rem 0.9rem 0.5rem 0.5rem;
+  box-shadow: 0 2px 10px rgba(29, 43, 79, 0.06);
+  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.25s;
+}
+.ov-tile:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 26px rgba(29, 43, 79, 0.12);
+}
+.ov-tile.here {
+  box-shadow: 0 0 0 2px var(--blue), 0 10px 26px rgba(29, 43, 79, 0.1);
+}
+.ov-orb {
+  flex: none;
+  width: 66px;
+  height: 66px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 0.95rem;
+  background: #eef4ff;
+  box-shadow: inset 0 0 0 1px rgba(0, 113, 227, 0.16);
+}
+.ov-orb {
+  grid-auto-flow: row;
+  align-content: center;
+  gap: 0;
+  line-height: 1.05;
+}
+.ov-orb small {
+  font-size: 0.66rem;
+  font-weight: 600;
+  color: var(--grey);
+}
+.overview .bs-close {
+  position: fixed;
+  top: calc(var(--top) + 10px);
+  right: 18px;
+}
+.ov-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+.ov-text b {
+  font-size: 0.98rem;
+  line-height: 1.25;
+}
+.ov-role {
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--blue);
+}
+.ov-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  color: var(--grey);
+}
+
+/* ---- Protecting the moves that close or forget something ---------------------------------- */
+.confirm-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  text-align: center;
+}
+.confirm-row p {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 0.92rem;
+}
+.menu .danger-soft {
+  color: #c4271d;
+}
+.menu .danger {
+  color: #fff !important;
+  background: #d70015 !important;
+  border-radius: 10px;
+  font-weight: 650;
+}
+
+/* ---- Small things ------------------------------------------------------------------------- */
+.b-status {
+  margin-left: 0.4rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--grey);
+}
+.drop-art {
+  display: block;
+  width: min(240px, 70%);
+  margin: 0.4rem auto 0.2rem;
+}
+.app.chat-open .inside .in-bottom,
+.app.chat-open .outside .out-cta {
+  visibility: hidden;
+}
+::selection {
+  background: rgba(0, 113, 227, 0.18);
+}
+
+@media (max-width: 860px) {
+  .app.deep .mission-chip {
+    display: none;
+  }
+  .nav-arrow {
+    top: 50% !important;
+    bottom: auto !important;
+  }
+  .dsvg {
+    min-width: 520px;
+  }
+  .dchart {
+    overflow-x: auto;
+  }
+  .out-hint {
+    left: 50%;
+  }
+  .t3.wrap {
+    max-width: 30vw;
+  }
+}
+
+/* ---- The cloud: where a returning visit starts -------------------------------------------- */
+.stage.cloud-home {
+  display: block;
+}
+.cloud-head {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  pointer-events: none;
+  animation: fade 0.6s 0.3s both;
+  width: min(640px, 100%);
+}
+.cloud-head h1 {
+  font-size: clamp(1.4rem, 3.2vmin, 2rem);
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+.cloud-head p {
+  color: var(--grey);
+  font-size: 0.95rem;
+  margin-top: 0.15rem;
+}
+.cloud-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  text-align: center;
+  color: var(--ink);
+  font: inherit;
+  padding: 0.3rem 0.5rem;
+  border-radius: 16px;
+  width: max-content;
+  max-width: 10em;
+  text-shadow: 0 0 10px #fff, 0 0 10px #fff, 0 0 4px #fff;
+  animation: fade 0.5s 0.4s both;
+  user-select: none;
+}
+.cloud-label:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 4px;
+}
+.cl-big {
+  font-size: clamp(1.3rem, 3.2vmin, 2rem);
+  font-weight: 750;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.25rem;
+  white-space: nowrap;
+}
+.cl-big small {
+  font-size: 0.42em;
+  font-weight: 600;
+  color: var(--grey);
+  letter-spacing: 0;
+}
+.cloud-label b {
+  font-size: clamp(0.82rem, 1.7vmin, 0.98rem);
+  line-height: 1.2;
+  text-wrap: balance;
+}
+.cl-sub {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.74rem;
+  color: var(--grey);
+  white-space: nowrap;
+}
+.cl-sub i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--c);
+}
+.cloud-label.score .cl-big {
+  font-size: clamp(1.8rem, 4.6vmin, 2.8rem);
+}
+.cloud-label.month .cl-big,
+.cloud-label.month b {
+  color: var(--blue);
+}
+
+/* ---- This month, and the month-end meeting -------------------------------------------------- */
+.month-page,
+.meeting {
+  position: fixed;
+  top: var(--top);
+  left: 0;
+  right: 0;
+  bottom: var(--chat);
+  z-index: 20;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0.6rem 16px 2rem;
+  background: rgba(255, 255, 255, 0.72);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  animation: fade 0.35s both;
+}
+.mp-col,
+.mt-col {
+  width: min(880px, 100%);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.6rem;
+}
+.mp-head h1,
+.mt-head h1 {
+  font-size: clamp(1.8rem, 4.4vmin, 2.8rem);
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  outline: none;
+}
+.mp-cal {
+  color: var(--grey);
+  font-weight: 600;
+}
+.mp-lede {
+  font-size: 1.1rem;
+  color: #3a3a3c;
+  margin-top: 0.4rem;
+}
+.mp-stats {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr 1fr;
+  gap: 0.9rem;
+}
+.mp-stat {
+  background: rgba(255, 255, 255, 0.82);
+  border-radius: 24px;
+  padding: 1rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+  box-shadow: 0 4px 18px rgba(29, 43, 79, 0.06);
+}
+.mp-stat.days {
+  background: #eef5ff;
+}
+.mp-big {
+  font-size: clamp(3rem, 8vmin, 4.6rem);
+  font-weight: 750;
+  letter-spacing: -0.045em;
+  line-height: 0.9;
+  color: var(--blue);
+  font-variant-numeric: tabular-nums;
+}
+.mp-label {
+  font-size: 0.95rem;
+  color: #3a3a3c;
+}
+.mp-track {
+  width: 100%;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(0, 113, 227, 0.12);
+  overflow: hidden;
+}
+.mp-track i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--blue);
+}
+.mp-fine {
+  font-size: 0.8rem;
+  color: var(--faint);
+}
+.mp-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.mp-section h2,
+.mt-content h2 {
+  font-size: 1.25rem;
+  letter-spacing: -0.015em;
+  outline: none;
+}
+.mp-meeting {
+  background: rgba(255, 255, 255, 0.82);
+  border-radius: 24px;
+  padding: 1.1rem 1.2rem;
+  box-shadow: 0 4px 18px rgba(29, 43, 79, 0.06);
+}
+.mp-meet-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.mp-agenda {
+  margin: 0.2rem 0 0;
+  padding-left: 1.2rem;
+  display: grid;
+  gap: 0.35rem;
+}
+.mp-agenda li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 0.35rem;
+}
+.mp-agenda li:last-child {
+  border-bottom: 0;
+}
+.mp-goals {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.mp-goals li {
+  background: rgba(255, 255, 255, 0.82);
+  border-radius: 999px;
+  padding: 0.4rem 0.85rem;
+  font-size: 0.92rem;
+}
+.mp-goals b {
+  margin-right: 0.35rem;
+}
+.m-when {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #1e7b3c;
+}
+
+.mt-head {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.mt-body {
+  display: grid;
+  grid-template-columns: 250px 1fr;
+  gap: 1.4rem;
+  align-items: start;
+}
+.mt-agenda ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.3rem;
+  position: sticky;
+  top: 0;
+}
+.mt-agenda button {
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  border-radius: 14px;
+  padding: 0.55rem 0.6rem;
+  font-weight: 600;
+  color: #3a3a3c;
+}
+.mt-agenda button:hover {
+  background: rgba(255, 255, 255, 0.7);
+}
+.mt-agenda button.on {
+  background: #fff;
+  color: var(--ink);
+  box-shadow: 0 4px 14px rgba(29, 43, 79, 0.08);
+}
+.mt-num {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 0.8rem;
+  background: var(--fill);
+  color: var(--grey);
+}
+.mt-agenda button.on .mt-num {
+  background: var(--blue);
+  color: #fff;
+}
+.mt-agenda button.seen .mt-num {
+  background: rgba(52, 199, 89, 0.16);
+  color: #1e7b3c;
+}
+.mt-content {
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 24px;
+  padding: 1.2rem 1.3rem;
+  box-shadow: 0 4px 18px rgba(29, 43, 79, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  min-height: 320px;
+}
+.mt-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+.top-sections button {
+  padding: 0.32rem 0.85rem;
+}
+
+@media (max-width: 860px) {
+  .mp-stats {
+    grid-template-columns: 1fr 1fr;
+  }
+  .mp-stat.days {
+    grid-column: 1 / -1;
+  }
+  .mt-body {
+    grid-template-columns: 1fr;
+  }
+  .mt-agenda ol {
+    position: static;
+    display: flex;
+    overflow-x: auto;
+    gap: 0.3rem;
+  }
+  .mt-agenda button {
+    white-space: nowrap;
+  }
+  .mt-agenda .mp-fine {
+    display: none;
+  }
+  .top-sections button {
+    padding: 0.3rem 0.55rem;
+    font-size: 0.76rem;
+  }
+}
+
+/* ---- The zoom rail: Step in / the four stops / Step out ------------------------------------ */
+.zoom-rail {
+  position: fixed;
+  right: 14px;
+  top: calc(var(--top) + 18px);
+  z-index: 16;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.15rem;
+  padding: 0.35rem;
+  border-radius: 22px;
+  animation: fade 0.5s 0.3s both;
+}
+.zr-step {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.4rem;
+  border: 0;
+  background: #fff;
+  color: var(--ink);
+  font-weight: 650;
+  font-size: 0.86rem;
+  border-radius: 16px;
+  padding: 0.5rem 0.7rem;
+  box-shadow: 0 2px 8px rgba(29, 43, 79, 0.08);
+  transition: background 0.2s, transform 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.zr-step:hover:not(:disabled) {
+  background: var(--blue);
+  color: #fff;
+}
+.zr-step:disabled {
+  opacity: 0.35;
+  box-shadow: none;
+}
+.zoom-ico {
+  width: 18px;
+  height: 18px;
+  flex: none;
+}
+.zr-stops {
+  list-style: none;
+  margin: 0.25rem 0;
+  padding: 0;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+/* The line that joins the stops: one depth, four places on it. */
+.zr-stops::before {
+  content: "";
+  position: absolute;
+  right: 15px;
+  top: 14px;
+  bottom: 14px;
+  width: 2px;
+  background: #d1d1d6;
+  border-radius: 2px;
+}
+.zr-stops button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.55rem;
+  border: 0;
+  background: none;
+  padding: 0.3rem 10px 0.3rem 0.7rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 550;
+  color: #545458;
+  position: relative;
+}
+.zr-stops button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.8);
+  color: var(--ink);
+}
+.zr-stops button:disabled {
+  opacity: 0.4;
+}
+.zr-stops i {
+  width: 12px;
+  height: 12px;
+  box-sizing: border-box;
+  flex: none;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid #aeaeb2;
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), background 0.2s, border-color 0.2s;
+}
+.zr-stops button.on {
+  color: var(--blue);
+  font-weight: 700;
+}
+.zr-stops button.on i {
+  background: var(--blue);
+  border-color: var(--blue);
+  transform: scale(1.35);
+  box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.16);
+}
+.zbtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.zoom-hint {
+  position: fixed;
+  right: 14px;
+  top: calc(var(--top) + 18px + 290px);
+  z-index: 16;
+  width: min(270px, calc(100vw - 28px));
+  border-radius: 18px;
+  padding: 0.75rem 0.9rem;
+  font-size: 0.88rem;
+  line-height: 1.4;
+  color: var(--ink);
+  animation: rise 0.5s 1.2s both;
+}
+.zoom-hint::before {
+  content: "";
+  position: absolute;
+  top: -7px;
+  right: 34px;
+  width: 14px;
+  height: 14px;
+  background: inherit;
+  transform: rotate(45deg);
+  border-radius: 3px;
+}
+.zoom-hint .link {
+  display: block;
+  margin-top: 0.4rem;
+  font-weight: 650;
+}
+/* The rail and the "next bubble" arrow share the right edge: the arrow sits lower. */
+.app.deep .nav-arrow.next,
+.app.deep .nav-arrow.prev {
+  top: auto;
+  bottom: calc(var(--chat) + 90px);
+  margin-top: 0;
+}
+
+@media (max-width: 860px) {
+  .zoom-rail {
+    right: 8px;
+    padding: 0.25rem;
+  }
+  .zr-step span,
+  .zr-name {
+    display: none;
+  }
+  .zr-step {
+    justify-content: center;
+    padding: 0.5rem;
+  }
+  .zr-stops button {
+    justify-content: center;
+    padding: 0.45rem;
+  }
+  .zr-stops::before {
+    right: auto;
+    left: 50%;
+    transform: translateX(-1px);
+  }
+  .zoom-hint {
+    top: calc(var(--top) + 18px + 220px);
+    right: 8px;
+  }
+}
+
+/* Messages appear beside the zoom rail, never over it. */
+.app.deep.phase-journey .toast,
+.app.deep.phase-cloud .toast {
+  right: 150px;
+}
+@media (max-width: 860px) {
+  .app.deep.phase-journey .toast,
+  .app.deep.phase-cloud .toast {
+    right: 64px;
+    width: min(360px, calc(100vw - 78px));
+  }
+}
+
+/* ---- The path at the top: named current stop, filled = seen, hollow = still to come ------- */
+.seq.glass {
+  top: calc(var(--top) - 2px);
+  padding: 3px 6px;
+  border-radius: 999px;
+  gap: 0;
+}
+.seq > button:not(.seq-all) i {
+  background: transparent;
+  border: 2px solid var(--c, #8e8e93);
+  opacity: 0.6;
+  width: 10px;
+  height: 10px;
+  box-sizing: border-box;
+}
+.seq > button.seen i {
+  background: var(--c, #8e8e93);
+  opacity: 0.75;
+}
+.seq > button.now {
+  width: auto !important;
+  display: flex !important;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0 0.75rem 0 0.6rem !important;
+  margin: 0 0.2rem;
+  background: #fff !important;
+  border-radius: 999px !important;
+  box-shadow: 0 2px 8px rgba(29, 43, 79, 0.1);
+}
+.seq > button.now i {
+  background: var(--c, #8e8e93);
+  opacity: 1;
+  transform: none;
+}
+.seq-now {
+  font-size: 0.8rem;
+  font-weight: 650;
+  color: var(--ink);
+  white-space: nowrap;
+  max-width: 34vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.seq-k {
+  color: var(--grey);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- Arrows that say where they go -------------------------------------------------------- */
+.nav-arrow {
+  width: auto !important;
+  min-width: 3rem;
+  padding: 0 1rem;
+  border-radius: 999px !important;
+  display: flex !important;
+  align-items: center;
+  gap: 0.45rem;
+}
+.nav-arrow:hover {
+  transform: translateY(-2px);
+}
+.na-name {
+  font-size: 0.86rem;
+  font-weight: 600;
+  max-width: 15ch;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---- Cloud: pick up where you left off ---------------------------------------------------- */
+.continue-pill {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  animation: fade 0.5s 0.8s both;
+}
+.cl-here {
+  margin-top: 0.2rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #fff;
+  background: var(--blue);
+  border-radius: 999px;
+  padding: 0.12rem 0.5rem;
+  text-shadow: none;
+}
+
+@media (max-width: 860px) {
+  .na-name {
+    display: none;
+  }
+  .nav-arrow {
+    padding: 0;
+    width: 2.6rem !important;
+    justify-content: center;
+  }
+  .seq-now {
+    max-width: 38vw;
+  }
+}
+
+/* ---- Guess before you see ------------------------------------------------------------------- */
+.guess {
+  background: rgba(255, 255, 255, 0.86);
+  border-radius: 26px;
+  padding: 1.1rem 1.2rem 1rem;
+  box-shadow: 0 10px 30px rgba(29, 43, 79, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  animation: rise 0.5s 0.4s both;
+}
+.guess-tag {
+  align-self: flex-start;
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: #fff;
+  background: var(--blue);
+  border-radius: 999px;
+  padding: 0.2rem 0.65rem;
+}
+.guess-q {
+  font-size: clamp(1.05rem, 2.2vmin, 1.3rem);
+  font-weight: 650;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+.guess-value {
+  font-size: clamp(2.4rem, 6.4vmin, 3.6rem);
+  font-weight: 750;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  color: var(--blue);
+  font-variant-numeric: tabular-nums;
+  min-height: 1em;
+}
+.guess-range {
+  width: 100%;
+  accent-color: var(--blue);
+  height: 28px;
+  cursor: pointer;
+}
+.guess-scale {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  color: var(--grey);
+  margin-top: -0.3rem;
+}
+.guess-ctl {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-top: 0.2rem;
+}
+.guess-reveal {
+  position: relative;
+  background: #ffffff;
+  border-radius: 22px;
+  padding: 0.8rem 1.1rem 0.7rem;
+  box-shadow: 0 10px 30px rgba(29, 43, 79, 0.1);
+  animation: pop 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.guess-reveal.near {
+  background: #f2fbf4;
+}
+.gr-num {
+  font-size: clamp(2rem, 5.4vmin, 3rem);
+  font-weight: 750;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.gr-head {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-top: 0.3rem;
+  color: var(--blue);
+}
+.guess-reveal.near .gr-head {
+  color: #1e7b3c;
+}
+.gr-track {
+  position: relative;
+  height: 6px;
+  border-radius: 999px;
+  background: #e5e5ea;
+  margin: 2rem 0 0.5rem;
+}
+.gr-real {
+  position: absolute;
+  top: 50%;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--blue);
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 0 5px rgba(0, 113, 227, 0.18);
+  animation: pop 0.5s 0.9s both;
+}
+.gr-you {
+  position: absolute;
+  bottom: 10px;
+  transform: translateX(-50%);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--grey);
+}
+.gr-you::after {
+  content: "";
+  display: block;
+  width: 2px;
+  height: 10px;
+  margin: 2px auto 0;
+  background: #aeaeb2;
+}
+.gr-line {
+  font-size: 0.95rem;
+  color: #3a3a3c;
+}
+/* A small burst of bubbles when the number lands. */
+.gr-pop {
+  position: absolute;
+  left: 2.6rem;
+  top: 2rem;
+  pointer-events: none;
+}
+.gr-pop i {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #7fb8ff;
+  opacity: 0;
+  animation: gr-burst 0.9s calc(1s + var(--d)) cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes gr-burst {
+  0% {
+    transform: rotate(var(--a)) translateX(0) scale(0.4);
+    opacity: 0.9;
+  }
+  100% {
+    transform: rotate(var(--a)) translateX(64px) scale(1);
+    opacity: 0;
+  }
+}
+
+/* ---- Light up your plan: dim bubbles in the cloud, lit dots on the path ----------------- */
+.cloud-label.dim .cl-big,
+.cloud-label.dim b {
+  opacity: 0.55;
+}
+.cl-dim {
+  margin-top: 0.15rem;
+  font-size: 0.66rem;
+  font-weight: 650;
+  color: var(--grey);
+  border: 1px dashed #c7c7cc;
+  border-radius: 999px;
+  padding: 0.08rem 0.45rem;
+}
+.lit-lamps {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 1rem;
+}
+.lit-lamps i {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #ffc53d;
+  box-shadow: 0 0 18px rgba(255, 159, 10, 0.6);
+  animation: lamp-on 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* A dot on the path lights up the moment its bubble is explored. */
+.seq > button.lit i {
+  animation: dot-lit 1.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes dot-lit {
+  0% {
+    transform: scale(0.6);
+    box-shadow: 0 0 0 0 rgba(255, 184, 0, 0.7);
+  }
+  40% {
+    transform: scale(1.8);
+    box-shadow: 0 0 0 7px rgba(255, 184, 0, 0);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: none;
+  }
+}
+@keyframes lamp-on {
+  0% {
+    transform: scale(0.6);
+    box-shadow: 0 0 0 0 rgba(255, 184, 0, 0.7);
+  }
+  40% {
+    transform: scale(1.7);
+    box-shadow: 0 0 0 8px rgba(255, 184, 0, 0);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 18px rgba(255, 159, 10, 0.6);
+  }
+}
+
+/* ---- Check in: tick what you did, then talk it through ---------------------------------------- */
+.ticks {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.ticks-head {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+.ticks-hint {
+  font-size: 0.92rem;
+  color: #3a3a3c;
+  margin-top: 0.2rem;
+}
+.tick-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.4rem;
+}
+.tick-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 16px;
+  background: var(--fill);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.tick-row:hover {
+  background: #ececf1;
+}
+.tick-row input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+.tick-box {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  border: 2px solid #aeaeb2;
+  background: #fff;
+  display: grid;
+  place-items: center;
+  color: transparent;
+  transition: background 0.2s, border-color 0.2s, transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.tick-box svg {
+  width: 16px;
+  height: 16px;
+}
+.tick-row input:focus-visible + .tick-box {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+.tick-row.on {
+  background: #eafaef;
+}
+.tick-row.on .tick-box {
+  background: var(--green);
+  border-color: var(--green);
+  color: #fff;
+  transform: scale(1.08);
+}
+.tick-row.on .tick-body b {
+  text-decoration: line-through;
+  text-decoration-color: rgba(30, 123, 60, 0.5);
+}
+.tick-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+.ticks-talk {
+  margin-top: 0.6rem;
+  font-size: 1.05rem;
+}
+.msg.note {
+  align-self: center;
+}
+.msg.note .bubble-msg {
+  background: none;
+  color: #1e7b3c;
+  font-size: 0.82rem;
+  font-weight: 650;
+  padding: 0.2rem 0.6rem;
 }

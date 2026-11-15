@@ -1,0 +1,45 @@
+{
+ "hash": "20c131c37c95cee8",
+ "steps": {
+  "cashflow": {
+   "title": "Compare retirement versus college funding amounts",
+   "why": "The plan says retirement saving and college funding compete for the same cash while you run a yearly shortfall.",
+   "steps": [
+    "List monthly cash available after taxes and spending",
+    "Write target monthly amounts for retirement and college",
+    "Adjust until monthly totals fit your current shortfall"
+   ],
+   "minutes": 20
+  },
+  "cushion": {
+   "title": "Set aside near‑term cash for goals",
+   "why": "The plan notes you’ve already earmarked a $6,000 vacation and Ethan’s $12,500 college payment, leaving a small extra cushion.",
+   "steps": [
+    "Move $6,000 into a separate vacation savings account",
+    "Move $12,500 into a separate short‑term college savings account",
+    "Keep those accounts separate from your emergency reserve"
+   ],
+   "minutes": 15
+  },
+  "retirement": {
+   "title": "Confirm whether a workplace retirement plan exists",
+   "why": "The plan says knowing if a workplace retirement plan is available will shape your retirement saving options.",
+   "steps": [
+    "Email or call your HR or payroll contact this month",
+    "Ask whether a 401(k) or similar plan is offered",
+    "Note plan start dates, employer match, and contribution limits"
+   ],
+   "minutes": 10
+  },
+  "college": {
+   "title": "Decide how to fund Ethan’s near‑term college cost",
+   "why": "The plan flags Ethan’s upcoming college payments competing with retirement and notes you have $0 in 529s.",
+   "steps": [
+    "Confirm the exact amount and due date for Ethan’s payment",
+    "Choose source: cash on hand, taxable savings, or other",
+    "Record that funding choice in your monthly cash plan"
+   ],
+   "minutes": 20
+  }
+ }
+}

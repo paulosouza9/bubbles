@@ -1,0 +1,55 @@
+{
+ "hash": "46c667c9f2cbda85",
+ "steps": {
+  "cushion": {
+   "title": "Top up your emergency cash",
+   "why": "You have $19,000 today, covering only a little over one month while the plan recommends 8 to 9 months.",
+   "steps": [
+    "Calculate your essential monthly expenses from recent bank statements",
+    "Decide one concrete target this month (one more month of expenses)",
+    "Transfer that amount into a separate savings account this month"
+   ],
+   "minutes": 15
+  },
+  "retirement": {
+   "title": "Start retirement contributions to your 401(k)s",
+   "why": "Your current contributions are $0 yet the plan projects $124,071 annual retirement need and employer matches could help.",
+   "steps": [
+    "Contact each employer’s HR or benefits portal to confirm any match",
+    "Log into each 401(k) plan and choose an initial deferral",
+    "Set the deferral to start with the next payroll period"
+   ],
+   "minutes": 20
+  },
+  "debt": {
+   "title": "Pay extra toward the 24.9% credit card",
+   "why": "One credit card charges 24.9% and, at current payments, won’t be paid off until January 2034.",
+   "steps": [
+    "Check this month’s credit card statement for your current payment amount",
+    "Make a one-time extra payment toward the card this month",
+    "Adjust your monthly budget so a higher payment fits going forward"
+   ],
+   "minutes": 25
+  },
+  "college": {
+   "title": "Discuss 529 funding versus other goals",
+   "why": "You have $30,000 in 529s and add $8,000 a year, which competes with protection, cash, and retirement for the same free cash flow.",
+   "steps": [
+    "Together list your yearly free cash flow available for goals",
+    "Confirm you currently add $8,000 a year to the 529s",
+    "Decide and implement one change to the 529 contribution this month"
+   ],
+   "minutes": 30
+  },
+  "investments": {
+   "title": "Begin regular 401(k) contributions",
+   "why": "You hold $330,000 invested and $250,000 in 401(k)s but contributions are $0 today; employer matches matter.",
+   "steps": [
+    "Confirm each employer’s match details with HR or plan documents",
+    "Choose a recurring payroll deferral amount in each 401(k) plan",
+    "Enable automatic contributions to start with the next paycheck"
+   ],
+   "minutes": 20
+  }
+ }
+}

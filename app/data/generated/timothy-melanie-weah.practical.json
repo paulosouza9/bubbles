@@ -1,0 +1,45 @@
+{
+ "hash": "235b345c25466a64",
+ "steps": {
+  "cashflow": {
+   "title": "Decide this month's college-saving allocation",
+   "why": "Nothing is set aside for Liam and Josh and you must decide how college saving shares your cash flow.",
+   "steps": [
+    "Pull the last three months of bank and credit statements",
+    "Use your reported net cash flow of $36,961/year to find monthly spare cash",
+    "Set a specific dollar amount to direct to college each month"
+   ],
+   "minutes": 25
+  },
+  "cushion": {
+   "title": "Buy life insurance for both of you",
+   "why": "The plan recommends using cash above your emergency reserve to close protection gaps, starting with life insurance for both of you.",
+   "steps": [
+    "Gather current policy details and beneficiaries for each of you",
+    "Request term life quotes from your current agent for needed coverage",
+    "Pick one policy and set up the initial payment this month"
+   ],
+   "minutes": 30
+  },
+  "college": {
+   "title": "Start a 529 with a set contribution",
+   "why": "You have $0 in 529s and need about $113,509 more, roughly $4,609.22 more saved each year.",
+   "steps": [
+    "Decide start contribution: $4,609.22 per year or monthly equivalent",
+    "Open a 529 account or access an existing 529 portal",
+    "Set an automatic contribution for the first transfer this month"
+   ],
+   "minutes": 20
+  },
+  "investments": {
+   "title": "Schedule an invested-mix review with your advisor",
+   "why": "The plan suggests revisiting your invested mix so it matches both people's risk comfort and the cash you hold.",
+   "steps": [
+    "Gather recent statements for IRAs, HSA, brokerage, and cash balances",
+    "Note the $150,000 cash and $210,000 invested savings amounts",
+    "Book a 30-minute meeting with your advisor this month"
+   ],
+   "minutes": 30
+  }
+ }
+}

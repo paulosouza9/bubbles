@@ -62,7 +62,7 @@ function BuildingList() {
   const order = [...plan.order, ...plan.bubbles.map((b) => b.id).filter((id) => !plan.order.includes(id))];
   return (
     <div className="b-list">
-      <div className="eyebrow">Your map</div>
+      <div className="eyebrow">All topics</div>
       <h2>Everything in your plan, one area at a time</h2>
       <ul>
         {order.map((id) => {
@@ -72,6 +72,7 @@ function BuildingList() {
               <button className={`glass b-card ${step === id ? "step" : ""}`} onClick={() => enter(id)}>
                 <span className="b-card-title">
                   <Dot status={b.status} /> {b.title}
+                  <span className="b-status">{STATUS_WORD[b.status]}</span>
                   {step === id && <span className="b-step">Your next step</span>}
                 </span>
                 <span className="b-card-sub">{b.building}</span>
@@ -161,21 +162,22 @@ function PanelHead({ b, extra }) {
 function PanelFoot({ b }) {
   const phase = useStore((s) => s.phase);
   const level = useStore((s) => s.level);
-  const style = useStore((s) => s.profile().style);
+  const style = useStore((s) => (s.easy ? "plain" : s.profile().style));
+  const easy = useStore((s) => s.easy);
   const idx = useStore((s) => s.journeyIndex);
   const total = useStore((s) => s.plan.order.length);
   const { simpler, deeper, journeyNext, journeyPrev, openDecision, setMissionsOpen } = useStore.getState();
   const mission = useStore((s) => s.activeMissions().find((m) => m.bubbleId === b.id && s.missions.status[m.id] !== "done"));
-  const canSimpler = level === 1 || style === "standard" || phase !== "journey";
+  const canSimpler = level === 1 || (!easy && style === "standard") || phase !== "journey";
   return (
     <footer className="panel-foot">
       <div className="foot-left">
         <button className="btn" onClick={simpler} disabled={!canSimpler}>
-          {level === 1 ? "‹ Back to the explanation" : style === "standard" ? "Simpler" : "‹ Back to the map"}
+          {level === 1 ? "‹ Explained" : !easy && style === "standard" ? "Simpler" : "‹ All topics"}
         </button>
         {level === 2 && (
           <button className="btn" onClick={deeper}>
-            {style === "plain" ? "More detail" : "See the figures ›"}
+            {!easy && style === "plain" ? "More detail" : "In detail ›"}
           </button>
         )}
       </div>
@@ -188,7 +190,7 @@ function PanelFoot({ b }) {
               </button>
             )}
             <button className="btn primary" onClick={journeyNext}>
-              {idx + 1 >= total ? "See your whole map" : "Next"}
+              {idx + 1 >= total ? "See all topics" : "Next"}
             </button>
           </>
         ) : (
@@ -209,12 +211,16 @@ function PanelFoot({ b }) {
   );
 }
 
+// Easy mode reads "about 16%" instead of "15.83%". The exact figure is one level down, in detail.
+const roundPct = (t) => t.replace(/(d+).(d+)%/g, (_, a, d) => `about ${Math.round(Number(`${a}.${d}`))}%`);
+
 function FloorPanel({ b }) {
-  const style = useStore((s) => s.profile().style);
+  const easy = useStore((s) => s.easy);
+  const style = useStore((s) => (s.easy ? "plain" : s.profile().style));
   const kind = useStore((s) => s.profile().kind);
   const chatOpen = useStore((s) => s.chat.open);
   const move = useStore((s) => s.plan.moves.find((m) => m.bubbleId === b.id));
-  const text = b.floor[style];
+  const text = easy ? roundPct(b.floor[style]) : b.floor[style];
   const n = useNarration(text, true);
   useEffect(() => {
     if (chatOpen) n.stop();
@@ -253,7 +259,7 @@ function FloorPanel({ b }) {
 function DeskPanel({ b }) {
   return (
     <section className="glass panel desk" aria-label={`${b.title}: the figures`}>
-      <PanelHead b={b} extra={<span className="chip static">The figures</span>} />
+      <PanelHead b={b} extra={<span className="chip static">In detail</span>} />
       <div className="panel-body" data-ask>
         <div className="desks">
           {b.desks.map((d, k) => (
@@ -298,7 +304,7 @@ function JourneyBar() {
         ))}
       </div>
       <button className="link" onClick={skip}>
-        Skip to the map
+        Skip to all topics
       </button>
     </div>
   );

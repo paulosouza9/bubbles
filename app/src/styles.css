@@ -2,7 +2,7 @@
 :root {
   --ink: #1d1d1f;
   --grey: #6e6e73;
-  --faint: #8e8e93;
+  --faint: #6e6e73; /* 5:1 on white: small print stays readable */
   --line: #e5e5ea;
   --fill: #f5f5f7;
   --blue: #0071e3;
@@ -243,7 +243,7 @@ h3 {
   border-radius: 999px;
   font-size: 0.8rem;
   font-weight: 550;
-  color: var(--grey);
+  color: #545458;
   white-space: nowrap;
 }
 .seg button.on {
@@ -657,7 +657,7 @@ h3 {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  animation: pop 0.45s cubic-bezier(0.3, 1.25, 0.5, 1) both;
+  animation: pop 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 .panel.desk {
   width: min(880px, 100%);
@@ -938,7 +938,7 @@ h3 {
 .fill {
   height: 100%;
   border-radius: 6px;
-  transition: width 0.8s cubic-bezier(0.3, 1.2, 0.5, 1);
+  transition: width 0.8s cubic-bezier(0.22, 1, 0.36, 1);
   position: relative;
 }
 .stack {
@@ -948,7 +948,7 @@ h3 {
   height: 100%;
   border: 0;
   padding: 0;
-  transition: width 0.7s cubic-bezier(0.3, 1.2, 0.5, 1);
+  transition: width 0.7s cubic-bezier(0.22, 1, 0.36, 1);
   min-width: 0;
 }
 .piece.sel {
@@ -1072,7 +1072,7 @@ h3 {
   border-radius: 50%;
   background: #fff;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
-  transition: transform 0.25s cubic-bezier(0.3, 1.4, 0.5, 1);
+  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .switch-row input:checked + .switch {
   background: var(--green);
@@ -1204,6 +1204,10 @@ h3 {
   gap: 0.4rem;
   padding: 0.4rem 0.4rem 0.4rem 1.1rem;
   border-radius: 999px;
+  transition: box-shadow 0.2s;
+}
+.chat-bar:focus-within {
+  box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.35), 0 8px 24px rgba(29, 43, 79, 0.1);
 }
 .chat-bar input,
 .checkin-input input {
@@ -1252,8 +1256,9 @@ h3 {
 .quote {
   font-size: 0.78rem;
   color: var(--grey);
-  border-left: 3px solid var(--blue);
-  padding-left: 0.5rem;
+  background: rgba(0, 113, 227, 0.06);
+  border-radius: 8px;
+  padding: 0.3rem 0.5rem;
   margin-bottom: 0.3rem;
 }
 .msg-actions,
@@ -1335,7 +1340,7 @@ h3 {
   display: flex;
   flex-direction: column;
   gap: 0.8rem;
-  animation: slide 0.35s cubic-bezier(0.3, 1.1, 0.5, 1) both;
+  animation: slide 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 .sheet > *:not(.sheet-head) {
   margin-left: 1.3rem;
@@ -1376,7 +1381,7 @@ h3 {
   flex: none;
   font-size: 0.8rem;
   color: #fff;
-  transition: all 0.4s cubic-bezier(0.3, 1.6, 0.5, 1);
+  transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .m-check.done {
   background: var(--green);
@@ -1410,7 +1415,7 @@ h3 {
   flex-direction: column;
   border-radius: 28px;
   overflow: hidden;
-  animation: pop 0.35s cubic-bezier(0.3, 1.25, 0.5, 1) both;
+  animation: pop 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 .modal-body {
   overflow-y: auto;
@@ -1525,7 +1530,7 @@ h3 {
   flex-direction: column;
   border-radius: 28px;
   overflow: hidden;
-  animation: pop 0.4s cubic-bezier(0.3, 1.2, 0.5, 1) both;
+  animation: pop 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 .month-body {
   flex: 1;
@@ -1561,7 +1566,7 @@ h3 {
   width: 84px;
   height: 84px;
   border-radius: 22px;
-  background: linear-gradient(135deg, #9ec1ff, #ffc2d9 60%, #ffe1a8);
+  background: #dbe7ff;
   position: relative;
   flex: none;
   overflow: hidden;
@@ -1798,4 +1803,14 @@ h3 {
   .mission-chip {
     bottom: calc(var(--chat) + 34px);
   }
+}
+.forming-note {
+  position: absolute;
+  bottom: calc(5vh + 2.4rem);
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(560px, calc(100vw - 32px));
+  font-size: 0.86rem;
+  color: var(--grey);
+  animation: fade 0.6s 2.4s both;
 }

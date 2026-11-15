@@ -748,6 +748,46 @@ async function emotionTexts(id, c, bubbles, moves, allowModel) {
   return emotion;
 }
 
+const PRACTICAL_SYSTEM = `You turn a family's EXISTING financial-plan recommendations into one small, concrete first step per topic.
+For each topic you get its explanation and the plan's recommendations. Pick the recommendation that belongs to this topic and turn it into a step the person can do this month.
+Return JSON: { "<topic id>": { "title": imperative, max 9 words, "why": one sentence grounded in the plan, "steps": 3 short how-to steps (max 14 words each), "minutes": a whole number from 5 to 30 } }
+If no recommendation belongs to a topic, return null for it. Never invent advice, products or figures that are not in the input; copy figures exactly. Plain American English, second person, no exclamation marks.`;
+
+async function practicalSteps(id, base, bubbles, moves, allowModel) {
+  const withMove = new Set(moves.map((m) => m.bubbleId));
+  const topics = bubbles.filter((b) => !withMove.has(b.id) && !["score", "assumptions"].includes(b.id)).map((b) => ({ id: b.id, title: b.title, simple: b.floor.plain, lookInto: b.lookInto || "" }));
+  if (!topics.length) return {};
+  const payload = { recommendations: base.recommendations, topics };
+  const hash = createHash("sha1").update(JSON.stringify(payload)).digest("hex").slice(0, 16);
+  const file = join(config.generatedDir, `${id}.practical.json`);
+  if (existsSync(file)) {
+    try {
+      const saved = JSON.parse(readFileSync(file, "utf8"));
+      if (saved.hash === hash) return saved.steps;
+    } catch {
+      /* regenerate */
+    }
+  }
+  if (!allowModel) return {};
+  let out;
+  try {
+    out = await chatJson({ system: PRACTICAL_SYSTEM, user: JSON.stringify(payload), effort: "low" });
+  } catch {
+    return {};
+  }
+  const allowed = numberSet(JSON.stringify(payload));
+  const ok = (x, max) => typeof x === "string" && x.length > 3 && x.length <= max && numbersOk(x, allowed);
+  const steps = {};
+  for (const t of topics) {
+    const o = out?.[t.id];
+    if (!o || !ok(o.title, 90) || !ok(o.why, 300) || !Array.isArray(o.steps) || o.steps.length < 2 || !o.steps.every((x) => ok(x, 140))) continue;
+    steps[t.id] = { title: clean(o.title), why: clean(o.why), steps: o.steps.slice(0, 4).map(clean), minutes: Math.min(30, Math.max(5, Math.round(Number(o.minutes) || 10))) };
+  }
+  mkdirSync(config.generatedDir, { recursive: true });
+  writeFileSync(file, JSON.stringify({ hash, steps }, null, 1));
+  return steps;
+}
+
 export async function buildPlan(id, { allowModel = true } = {}) {
   if (memo.has(id)) return memo.get(id);
   const c = await getCase(id);
@@ -818,6 +858,17 @@ export async function buildPlan(id, { allowModel = true } = {}) {
     score_after: m.score_after,
     quiz: m.quiz,
   }));
+  const practical = gen.generatedBy === "model" ? await practicalSteps(id, base, bubbles, moves, allowModel) : {};
+  const practicalMissions = Object.entries(practical).map(([bid, p]) => ({
+    id: `p-${bid}`,
+    type: "practical",
+    title: p.title,
+    why: p.why,
+    steps: p.steps,
+    minutes: p.minutes,
+    bubbleId: bid,
+    quiz: understand.find((u) => u.bubbleId === bid)?.quiz || null,
+  }));
   const quick = moveMissions.find((m) => m.type === "quick") || moveMissions[0];
   const important = [...moveMissions].filter((m) => m !== quick).sort((a, b) => b.score_after - a.score_after)[0];
   if (important) important.type = "important";
@@ -829,7 +880,7 @@ export async function buildPlan(id, { allowModel = true } = {}) {
     bubbles,
     moves,
     texts: { city: t.city, strength: t.strength, anchor: emotion?.anchor ?? null, greeting: `Okay, ${base.names.join(" and ")}. I have your plan. Let me walk you through it. It takes about three minutes.` },
-    missionPool: [...moveMissions, ...understand],
+    missionPool: [...moveMissions, ...practicalMissions, ...understand],
     firstMissions: [quick?.id, important?.id, worst?.id].filter(Boolean),
     generatedBy: gen.generatedBy,
     corpus: src,

@@ -2,8 +2,8 @@
 // that sets the starting level and teaches the zoom once.
 import { useEffect, useRef, useState } from "react";
 import { api } from "../api.js";
-import { sfx, speak, stopSpeaking } from "../audio.js";
-import { PROFILES, useStore } from "../store.js";
+import { speak, stopSpeaking } from "../audio.js";
+import { useStore } from "../store.js";
 
 export function go(path) {
   if (location.pathname !== path) history.pushState({}, "", path);
@@ -11,7 +11,6 @@ export function go(path) {
 
 export function Landing() {
   const families = useStore((s) => s.families);
-  const status = useStore((s) => s.status);
   const loadError = useStore((s) => s.loadError);
   const openFamily = useStore((s) => s.openFamily);
   const [drag, setDrag] = useState(false);
@@ -72,6 +71,27 @@ export function Landing() {
           <div className="eyebrow">Start with your documents</div>
           <h2>Drop your statements or your plan report here</h2>
           <p className="mute">We match them to the plan Sherpas has prepared for you. Your figures come from that plan, never from a guess.</p>
+          <svg className="drop-art" viewBox="0 0 240 120" aria-hidden="true">
+            <defs>
+              <radialGradient id="dropBubble" cx="38%" cy="32%" r="70%">
+                <stop offset="0" stopColor="#fff" />
+                <stop offset="0.7" stopColor="#EAF3FF" />
+                <stop offset="1" stopColor="#CFE3FF" />
+              </radialGradient>
+            </defs>
+            <g fill="#fff" stroke="#D1D1D6" strokeWidth="1.5">
+              <rect x="22" y="30" width="58" height="74" rx="7" transform="rotate(-8 51 67)" />
+              <rect x="40" y="22" width="58" height="74" rx="7" />
+            </g>
+            <g stroke="#E5E5EA" strokeWidth="4" strokeLinecap="round">
+              <path d="M52 40h34M52 52h26M52 64h30M52 76h20" />
+            </g>
+            <path d="M110 60h26" stroke="#C7C7CC" strokeWidth="2" strokeLinecap="round" strokeDasharray="2 6" />
+            <circle cx="182" cy="60" r="40" fill="url(#dropBubble)" stroke="#B9D6FF" strokeWidth="1.5" />
+            <circle cx="168" cy="72" r="7" fill="#34C759" opacity="0.85" />
+            <circle cx="190" cy="50" r="10" fill="#0071E3" opacity="0.8" />
+            <circle cx="198" cy="76" r="5" fill="#FF9F0A" opacity="0.85" />
+          </svg>
           <button className="btn primary" onClick={() => input.current.click()} disabled={Boolean(busy)}>
             Choose files
           </button>
@@ -103,11 +123,6 @@ export function Landing() {
         </div>
       </section>
       <footer className="landing-foot mute small">
-        {status && (
-          <>
-            Plan data: {status.data?.source === "mcp" ? "live from the Sherpas MCP" : "the cases folder in this repo"} · Voice: {status.voice?.tts === "elevenlabs" ? "ElevenLabs" : "your browser's voice (ElevenLabs is not answering right now)"}
-          </>
-        )}
         <span className="block">These are fictional households built for the Sherpas hackathon. This app explains an existing plan. It does not give new financial advice.</span>
       </footer>
     </main>
@@ -117,15 +132,19 @@ export function Landing() {
 export function Forming() {
   const plan = useStore((s) => s.plan);
   const via = useStore((s) => s.via);
-  const setPhase = useStore((s) => s.setPhase);
   const [step, setStep] = useState(0);
+  // Straight from the greeting into the first bubble: no questions first.
+  const begin = () => {
+    useStore.setState({ tutorialDone: true });
+    useStore.getState().startJourney();
+  };
   useEffect(() => {
     let alive = true;
     const t0 = performance.now();
     const t1 = setTimeout(() => alive && setStep(1), 1500);
     const finish = () => {
       const wait = Math.max(0, 3600 - (performance.now() - t0));
-      setTimeout(() => alive && setPhase("calibrate"), wait);
+      setTimeout(() => alive && begin(), wait);
     };
     const t2 = setTimeout(
       () =>
@@ -155,186 +174,10 @@ export function Forming() {
           {plan.texts.strength}
         </p>
       )}
-      <button className="link skip" onClick={() => setPhase("calibrate")}>
+      <p className="forming-note">Larger text or simpler words? Easy mode, at the top, works at any moment.</p>
+      <button className="link skip" onClick={begin}>
         Skip
       </button>
-    </div>
-  );
-}
-
-const Q = {
-  familiar: {
-    q: "How familiar does “401(k)” sound to you?",
-    options: [
-      { v: 0, label: "Never heard of it" },
-      { v: 1, label: "I have heard of it" },
-      { v: 2, label: "I know it well" },
-    ],
-  },
-  prefer: {
-    q: "What would you rather get?",
-    options: [
-      { v: "do", label: "Just tell me what to do" },
-      { v: "why", label: "Help me understand why" },
-    ],
-  },
-  figures: {
-    q: "Exact figures, or the main ideas?",
-    options: [
-      { v: "ideas", label: "The main ideas" },
-      { v: "exact", label: "Exact figures" },
-    ],
-  },
-  easy: {
-    q: "Would you like larger text and simpler steps?",
-    options: [
-      { v: true, label: "Yes, make it simpler" },
-      { v: false, label: "No, this is fine" },
-    ],
-  },
-};
-
-function profileFrom(a) {
-  if (a.familiar === 2 && a.figures === "exact") return "expert";
-  if (a.prefer === "do") return "action";
-  if (a.familiar === 0) return "novice";
-  return "understand";
-}
-
-export function Calibration() {
-  const plan = useStore((s) => s.plan);
-  const via = useStore((s) => s.via);
-  const simple = useStore((s) => s.simple);
-  const level = useStore((s) => s.level);
-  const tutorial = useStore((s) => s.tutorial);
-  const { setProfile, setPerson, setEasy, setTutorial, setLevel, startJourney } = useStore.getState();
-  const couple = plan.names.length > 1;
-  const suggested = plan.persona.suggestedProfile;
-  const [step, setStep] = useState(couple ? "who" : via === "intake" ? "suggest" : "familiar");
-  const [a, setA] = useState({});
-
-  const prompt =
-    step === "who"
-      ? "Who is here right now?"
-      : step === "suggest"
-        ? `From your Sherpas intake, we would start you here: ${PROFILES[suggested].label.toLowerCase()}. Is that right?`
-        : step === "tutorial"
-          ? tutorial === "back"
-            ? "You are inside. Zooming in always means going deeper. Now press Back to step out."
-            : "One thing before we start. Tap any bubble to step inside it."
-          : Q[step]?.q;
-  useEffect(() => {
-    if (prompt) speak(prompt);
-    return () => stopSpeaking();
-  }, [prompt]);
-
-  // The zoom lesson: done once, by doing it.
-  useEffect(() => {
-    if (step !== "tutorial") return;
-    if (tutorial === "enter" && level <= 2) setTutorial("back");
-    if (tutorial === "back" && level >= 3) finishAll();
-  }, [step, tutorial, level]);
-
-  const finishAll = () => {
-    setTutorial(null);
-    useStore.setState({ tutorialDone: true });
-    startJourney();
-  };
-  const afterEasy = (easy) => {
-    setEasy(easy);
-    sfx("ding");
-    finishAll();
-  };
-  const answer = (k, v) => {
-    const next = { ...a, [k]: v };
-    setA(next);
-    sfx("pop");
-    if (k === "familiar") setStep("prefer");
-    else if (k === "prefer") setStep("figures");
-    else if (k === "figures") {
-      setProfile(profileFrom(next));
-      setStep("easy");
-    }
-  };
-
-  return (
-    <div className={`calib ${step === "tutorial" ? "tutorial" : ""}`}>
-      {step === "tutorial" && tutorial === "enter" && <div className="ghost-hand" aria-hidden="true" />}
-      <div className="calib-card" role="dialog" aria-label="Getting started">
-        <p className="calib-q">{prompt}</p>
-        {step === "who" && (
-          <div className="options">
-            {plan.names.map((n) => (
-              <button
-                key={n}
-                className="btn"
-                onClick={() => {
-                  setPerson(n);
-                  setStep(via === "intake" ? "suggest" : "familiar");
-                }}
-              >
-                {n}
-              </button>
-            ))}
-            <button
-              className="btn"
-              onClick={() => {
-                setPerson(plan.names[0]);
-                setStep(via === "intake" ? "suggest" : "familiar");
-              }}
-            >
-              Both of us
-            </button>
-          </div>
-        )}
-        {step === "suggest" && (
-          <div className="options">
-            <button
-              className="btn primary"
-              onClick={() => {
-                setProfile(suggested);
-                setStep("easy");
-              }}
-            >
-              Yes, start there
-            </button>
-            <button className="btn" onClick={() => setStep("familiar")}>
-              Let me choose
-            </button>
-          </div>
-        )}
-        {["familiar", "prefer", "figures"].includes(step) && (
-          <div className="options">
-            {Q[step].options.map((o) => (
-              <button key={String(o.v)} className="btn" onClick={() => answer(step, o.v)}>
-                {o.label}
-              </button>
-            ))}
-          </div>
-        )}
-        {step === "easy" && (
-          <div className="options">
-            {Q.easy.options.map((o) => (
-              <button key={String(o.v)} className="btn" onClick={() => afterEasy(o.v)}>
-                {o.label}
-              </button>
-            ))}
-          </div>
-        )}
-        {step === "tutorial" && (
-          <div className="options">
-            {tutorial === "back" && (
-              <button className="btn primary" onClick={() => setLevel(3)}>
-                ‹ Back
-              </button>
-            )}
-            <button className="link" onClick={finishAll}>
-              Skip this
-            </button>
-          </div>
-        )}
-        {step !== "tutorial" && <p className="fine">You can change this at any time. Nothing here is a test.</p>}
-      </div>
     </div>
   );
 }

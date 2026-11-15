@@ -30,6 +30,17 @@ export const PreviewCtx = createContext(false);
 const usePreview = () => useContext(PreviewCtx);
 const sfx = playSfx;
 
+function TButton({ p, cls = "", label, onClick, children }) {
+  if (usePreview()) return null;
+  return (
+    <Html center position={p} zIndexRange={[6, 0]}>
+      <button className={`t3 t3-btn ${cls}`} onClick={onClick} aria-label={label}>
+        {children}
+      </button>
+    </Html>
+  );
+}
+
 function T({ p, cls = "", children }) {
   if (usePreview()) return null;
   return (
@@ -213,7 +224,7 @@ function BucketsToy({ data }) {
         return (
           <group key={it.name}>
             <Tube x={x} y={-0.25} height={1.55} level={poured ? it.amount / max : 0} color={PALETTE[i % PALETTE.length]} selected={sel === i} onTap={() => setSel(sel === i ? null : i)} />
-            <T p={[x, -1.22, 0]} cls={sel === i ? "on" : ""}>
+            <T p={[x, -1.3, 0]} cls={`wrap narrow ${sel === i ? "on" : ""}`}>
               {it.name}
               <b>{poured ? <Num v={it.amount} f={sel === i ? usd : usdShort} /> : "…"}</b>
             </T>
@@ -395,7 +406,24 @@ function TimelineToy({ data }) {
       </T>
       <T p={[xOf(retireIdx), base - 0.28, 0]} cls="small">retire</T>
       {outIdx >= 0 && <T p={[xOf(outIdx) + 0.25, base - 0.28, 0]} cls="small bad">runs out at {data.runsOutAge}</T>}
-      <T p={[0, -1.72, 0]} cls="small">
+      {!preview && (
+        <Html center position={[0, -1.6, 0]} zIndexRange={[6, 0]}>
+          <input
+            className="t3-range"
+            type="range"
+            min={0}
+            max={n - 1}
+            value={i}
+            aria-label="Year of the plan"
+            aria-valuetext={`${data.years[i].year}, age ${firstAge + i}`}
+            onChange={(e) => {
+              touched.current = true;
+              setI(Number(e.target.value));
+            }}
+          />
+        </Html>
+      )}
+      <T p={[0, -1.6, 0]} cls="small">
         Slide across the years. Net worth here, in today's dollars: <b>{usdShort(yr.netWorthToday)}</b>
         {data.goals.filter((g) => g.year === yr.year).map((g) => ` · ${g.name}`)}
       </T>
@@ -618,12 +646,21 @@ function ScoreToy({ data }) {
                 burst(g.current, C.green, 24);
               }}
             />
-            <T p={[x, -1.58, 0]} cls={`small ${active ? "on" : ""}`}>
+            <TButton
+              p={[x, -1.62, 0]}
+              cls={`small wrap ${active ? "on" : ""}`}
+              label={`${active ? "Switch off" : "Switch on"}: ${m.title}. On its own, score ${m.score_before} to ${m.score_after}`}
+              onClick={() => {
+                setOn(active ? on.filter((id) => id !== m.id) : [...on, m.id]);
+                sfx(active ? "pop" : "ding");
+                burst(g.current, C.green, 24);
+              }}
+            >
               <b>{m.title}</b>
               <span className="block">
                 on its own: {m.score_before} to {m.score_after}
               </span>
-            </T>
+            </TButton>
           </group>
         );
       })}
@@ -634,8 +671,13 @@ function ScoreToy({ data }) {
 }
 
 // ---- Your next steps: the month ring and its three missions ------------------------------------
+const NONE = {};
+const KIND = { understand: "Understand", quick: "Quick", important: "Important", practical: "Practical" };
 function StepsToy() {
-  const tab = useStore((s) => s.monthTab);
+  const preview = usePreview();
+  const storeTab = useStore((s) => s.monthTab);
+  const tab = preview ? "missions" : storeTab;
+  const when = useStore((s) => s.missions.when) || NONE;
   const plan = useStore((s) => s.plan);
   const active = useStore((s) => s.missions.active);
   const status = useStore((s) => s.missions.status);
@@ -686,10 +728,13 @@ function StepsToy() {
               }}
             />
             {st === "done" && <T p={[x, -1.02, 0.25]} cls="onball">✓</T>}
-            <T p={[x, -1.52, 0]} cls="small mission-t">
-              <span className="kind">{m.type === "understand" ? "Understand" : m.type === "quick" ? "Quick" : "Important"} · {m.minutes} min</span>
+            <TButton p={[x, -1.58, 0]} cls="small mission-t wrap" label={`Open mission: ${m.title}`} onClick={() => openDecision(m.id)}>
+              <span className="kind">
+                {KIND[m.type] || "Mission"} · {m.minutes} min
+              </span>
               <b>{m.title}</b>
-            </T>
+              {st === "done" ? <span className="planned-t">Done</span> : when[m.id] ? <span className="planned-t">Planned: {when[m.id].toLowerCase()}</span> : null}
+            </TButton>
           </group>
         );
       })}
@@ -697,7 +742,44 @@ function StepsToy() {
   );
 }
 
-const MAP = { buckets: BucketsToy, tank: TankToy, timeline: TimelineToy, debts: DebtsToy, coverage: CoverageToy, college: CollegeToy, allocation: AllocationToy, score: ScoreToy, steps: StepsToy };
+function AssumptionsToy({ data }) {
+  const preview = usePreview();
+  const ref = useRef();
+  useFrame((st) => {
+    if (ref.current) ref.current.rotation.z = Math.sin(st.clock.elapsedTime * 0.5) * 0.04;
+  });
+  if (!preview) return null;
+  const n = Math.min(6, data.items?.length || 4);
+  return (
+    <group ref={ref}>
+      {Array.from({ length: n }, (_, i) => {
+        const a = (i - (n - 1) / 2) * 0.16;
+        return (
+          <group key={i} position={[Math.sin(a) * 1.6, Math.cos(a) * 0.4 - 0.4, i * 0.02]} rotation={[0, 0, -a]}>
+            <mesh>
+              <boxGeometry args={[1.5, 2, 0.04]} />
+              <Solid color="#ffffff" />
+            </mesh>
+            {[0.55, 0.15, -0.25].map((y) => (
+              <group key={y}>
+                <mesh position={[-0.45, y, 0.03]}>
+                  <sphereGeometry args={[0.07, 16, 16]} />
+                  <Solid color={C.green} />
+                </mesh>
+                <mesh position={[0.15, y, 0.03]}>
+                  <boxGeometry args={[0.85, 0.08, 0.01]} />
+                  <Solid color="#D1D1D6" />
+                </mesh>
+              </group>
+            ))}
+          </group>
+        );
+      })}
+    </group>
+  );
+}
+
+const MAP = { assumptions: AssumptionsToy, buckets: BucketsToy, tank: TankToy, timeline: TimelineToy, debts: DebtsToy, coverage: CoverageToy, college: CollegeToy, allocation: AllocationToy, score: ScoreToy, steps: StepsToy };
 
 export default function Toy({ bubble, preview = false }) {
   const Cmp = MAP[bubble.miniapp.template];

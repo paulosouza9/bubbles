@@ -8,8 +8,9 @@ import { usd } from "../format.js";
 import { ScoreRing } from "../miniapps/index.jsx";
 import { useStore } from "../store.js";
 import { MustKnow } from "./Panels.jsx";
+import { monthInfo } from "../month.js";
 
-const TYPE = { quick: "Quick", important: "Important", understand: "Understand" };
+const TYPE = { quick: "Quick", important: "Important", understand: "Understand", practical: "Practical" };
 
 export function Ring({ statuses, size = 44 }) {
   const n = Math.max(1, statuses.length);
@@ -54,15 +55,18 @@ export function MissionChip() {
   const { list, statuses, month } = useMissions();
   const score = useStore((s) => s.plan.score.value);
   const proj = useStore((s) => s.projected().score);
-  const open = useStore((s) => s.setMissionsOpen);
+  const open = useStore((s) => s.openMonthPage);
   const journeyDone = useStore((s) => s.journeyDone);
   if (!journeyDone || !list.length) return null;
   const done = statuses.filter((s) => s === "done").length;
+  const left = monthInfo().daysLeft;
   return (
-    <button className="glass mission-chip" onClick={() => open(true)}>
+    <button className="glass mission-chip" onClick={() => open()}>
       <Ring statuses={statuses} />
       <span>
-        <b>Month {month} missions</b>
+        <b>
+          Month {month} · {left} {left === 1 ? "day" : "days"} left
+        </b>
         <span className="mute block">
           {done} of {list.length} done · score {score}
           {proj !== score ? ` → ${proj} projected` : ""}
@@ -73,6 +77,7 @@ export function MissionChip() {
 }
 
 export function MissionRow({ m, status, onOpen }) {
+  const when = useStore((s) => s.missions.when?.[m.id]);
   return (
     <button className={`mission ${status}`} onClick={onOpen}>
       <span className={`m-check ${status}`}>{status === "done" ? "✓" : ""}</span>
@@ -81,6 +86,7 @@ export function MissionRow({ m, status, onOpen }) {
           {TYPE[m.type]} · about {m.minutes} min
         </span>
         <b>{m.title}</b>
+        {status !== "done" && when && <span className="m-when block">Planned for {when.toLowerCase()}</span>}
         {m.score_after != null && (
           <span className="mute block">
             {m.score_after !== m.score_before ? `Score ${m.score_before} → ${m.score_after}, according to your plan` : "Scored together with your other steps"}
@@ -147,14 +153,14 @@ export function MissionsPanel() {
   );
 }
 
-export function Quiz({ quiz, onPass, context }) {
+export function Quiz({ quiz, onPass, context, optional = false }) {
   const [pick, setPick] = useState(null);
   const log = useStore((s) => s.log);
   const right = pick === quiz.correct;
   return (
     <div className="quiz">
       <div className="quiz-q">
-        <span className="eyebrow">Quick check</span>
+        <span className="eyebrow">{optional ? "Quick check · optional" : "Quick check"}</span>
         {quiz.q}
       </div>
       <div className="quiz-options">
@@ -191,6 +197,9 @@ export function DecisionCard() {
   const [passed, setPassed] = useState(false);
   const [askWhen, setAskWhen] = useState(false);
   const when = useStore((s) => (s.decision ? s.missions.when?.[s.decision] : null));
+  // During the first walk-through you can decide on a step, but not tick it off: nothing has
+  // had time to happen yet. Ticking off lives in "This month".
+  const walking = useStore((s) => !s.journeyDone);
   const { closeDecision, setMissionStatus, setMissionWhen, enter, setHumanOpen, markUnderstood, setMissionsOpen, showToast } = useStore.getState();
   if (!id || !m) return null;
   const close = () => {
@@ -201,13 +210,13 @@ export function DecisionCard() {
   const commit = (choice) => {
     setMissionWhen(m.id, choice);
     sfx("ding");
-    showToast({ title: "Decided", text: `${m.title}: ${choice.toLowerCase()}. It is waiting for you in “Your next steps”.` });
+    showToast({ title: "Decided", text: `${m.title}: ${choice.toLowerCase()}. ${walking ? "You will find it in “This month” when the walk-through ends." : "It is waiting for you in “This month”."}` });
     close();
   };
   const understood = passed || status !== "todo";
   return (
     <div className="modal-wrap" onClick={close}>
-      <div className="glass modal decision" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Decision card">
+      <div className="glass modal decision" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label={m.title}>
         <header className="sheet-head">
           <div>
             <div className="eyebrow">
@@ -249,7 +258,10 @@ export function DecisionCard() {
             ))}
           </ol>
           {bubble && <MustKnow items={bubble.mustKnow} />}
-          {status !== "done" && !askWhen && <Quiz quiz={m.quiz} context={m.id} onPass={() => setPassed(true)} />}
+          {/* The check is how an "understand" mission is completed. For a real step it is optional: deciding never waits on a quiz. */}
+          {m.quiz && !askWhen && (m.type === "understand" ? status !== "done" : status === "todo") && (
+            <Quiz quiz={m.quiz} context={m.id} optional={m.type !== "understand"} onPass={() => setPassed(true)} />
+          )}
           {askWhen && (
             <div className="when">
               <p className="when-q">When will you do it?</p>
@@ -263,7 +275,11 @@ export function DecisionCard() {
               <p className="fine">Picking a moment makes it far more likely to happen. You can change it any time.</p>
             </div>
           )}
-          {status === "active" && when && !askWhen && <p className="planned">Planned for: {when.toLowerCase()}</p>}
+          {status === "active" && when && !askWhen && (
+            <p className="planned">
+              Planned for: {when.toLowerCase()}.{walking ? " Once you have done it, tick it off in “This month”." : ""}
+            </p>
+          )}
           {status === "done" && <p className="quiz-fb ok">Marked as done. Your projected score updates right away. It becomes your real score when your next Sherpas update confirms it.</p>}
         </div>
         <footer className="modal-foot">
@@ -306,18 +322,21 @@ export function DecisionCard() {
             !askWhen && (
               <button
                 className="btn primary"
-                disabled={!understood}
                 onClick={() => {
-                  setMissionStatus(m.id, "active", { decision_confirmed: true });
+                  setMissionStatus(m.id, "active", { decision_confirmed: true, checked: understood });
                   useStore.getState().addMission(m.id);
                   sfx("pop");
                   setAskWhen(true);
                 }}
               >
-                {understood ? "I will do this" : "Answer the check first"}
+                I will do this
               </button>
             )
-          ) : askWhen ? null : status !== "done" ? (
+          ) : askWhen ? null : status !== "done" && walking ? (
+            <button className="btn primary" onClick={close}>
+              Continue the walk-through
+            </button>
+          ) : status !== "done" ? (
             <button
               className="btn primary"
               onClick={() => {

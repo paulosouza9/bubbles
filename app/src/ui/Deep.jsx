@@ -1,26 +1,41 @@
 // The 3D experience, one bubble at a time. No cards: the bubble is the container.
-//   3 Outside  the bubble floats in front of you with its one sentence
-//   2 Inside   the bubble fills the screen: the voice, one sentence at a time, and a toy to play with
-//   1 Deeper   every figure is a small bubble you can tap
-import { useEffect, useMemo, useRef, useState } from "react";
+//   Outside    the bubble floats beside its story: the key number, why it matters, the way forward
+//   Inside     the camera is inside the bubble: the simple explanation, a toy, then the first step
+//   In detail  the toy breaks apart into the detailed explanation and its charts
+// The guided path is three bubbles (what's working, what needs you, your next steps). Every
+// other topic is one zoom out, in "All topics".
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { sfx, speak, stopSpeaking } from "../audio.js";
 import { STATUS_COLOR, STATUS_WORD, sentences, usdShort } from "../format.js";
+import { hopeFor } from "../hope.js";
+import { guessFor, guessVerdict } from "../guess.js";
 import MiniApp from "../miniapps/index.jsx";
+import { pathOf, ROLE } from "../path.js";
 import { fresh, heard, outsideLine } from "../repeat.js";
 import { useStore } from "../store.js";
-import { MissionChip } from "./Missions.jsx";
-import { StepsInside } from "./Month.jsx";
-import { hopeFor } from "../hope.js";
 import Detail from "./Detail.jsx";
+import { MissionChip } from "./Missions.jsx";
 import { ActionMoment } from "./Moments.jsx";
+import { StepsInside } from "./Month.jsx";
 import { Dot, FlatStage } from "./Panels.jsx";
+
+// While an overlay is open, Escape closes it and nothing else.
+function useOverlayEscape(onClose) {
+  useEffect(() => {
+    useStore.setState({ overlayClose: onClose });
+    return () => useStore.setState((s) => (s.overlayClose === onClose ? { overlayClose: null } : {}));
+  }, [onClose]);
+}
 
 // A full-screen "bubble" for longer reading: it grows from the middle until no edge is left.
 export function BubbleScreen({ title, eyebrow, onClose, children, foot }) {
+  const close = useRef();
+  useOverlayEscape(onClose);
+  useEffect(() => close.current?.focus(), []);
   return (
-    <div className="bubble-screen" role="dialog" aria-label={title}>
-      <button className="icon-btn bs-close" onClick={onClose} aria-label="Close">
+    <div className="bubble-screen" role="dialog" aria-modal="true" aria-label={title}>
+      <button ref={close} className="icon-btn bs-close" onClick={onClose} aria-label="Close">
         ✕
       </button>
       <div className="bs-col">
@@ -41,12 +56,14 @@ export function MustLine({ items }) {
   if (!items?.length) return null;
   return (
     <div className="must-line" data-ask>
-      <span className="i">i</span>
+      <span className="i" aria-hidden="true">
+        i
+      </span>
       <span>
         <b>Must know.</b> {items[0].text}
         {open && items.slice(1).map((m, k) => <span key={k}> {m.text}</span>)}
         {items.length > 1 && (
-          <button className="link" onClick={() => setOpen(!open)}>
+          <button className="link" onClick={() => setOpen(!open)} aria-expanded={open}>
             {open ? "less" : `+${items.length - 1} more`}
           </button>
         )}
@@ -97,51 +114,163 @@ function useKaraoke(bubbleId, text, voiceText) {
     return stop;
   }, [f]);
   const parts = mode === "all" ? f.all : f.parts;
-  // Position of the sentence being read, within the text on screen (when they are the same text).
   const curInAll = playing && f.mapped ? (mode === "all" ? cur : f.index[cur]) : -1;
   return { parts, all: f.display, cur, curInAll, playing, play: () => run("all"), stop, nothingNew: !f.parts.length };
 }
 
+function ListenButton({ k }) {
+  return (
+    <button className="icon-btn listen" onClick={k.playing ? k.stop : k.play} aria-label={k.playing ? "Pause the voice" : "Listen again"} title={k.playing ? "Pause" : "Listen again"}>
+      {k.playing ? (
+        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+          <rect x="6" y="5" width="4" height="14" rx="1.2" fill="currentColor" />
+          <rect x="14" y="5" width="4" height="14" rx="1.2" fill="currentColor" />
+        </svg>
+      ) : (
+        <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true">
+          <path d="M4 10v4h4l5 4V6L8 10H4z" fill="currentColor" />
+          <path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" stroke="currentColor" strokeWidth="1.8" fill="none" strokeLinecap="round" />
+        </svg>
+      )}
+    </button>
+  );
+}
+
+// ---- Navigation -----------------------------------------------------------------------
+
 function SeqNav() {
-  const seq = useStore(useShallow((s) => s.seq()));
+  const path = useStore(useShallow((s) => s.seq()));
   const focus = useStore((s) => s.focus);
+  const plan = useStore((s) => s.plan);
+  const explored = useStore((s) => s.explored);
+  const lit = useStore((s) => s.lit);
   const { go, jump, bubble } = useStore.getState();
-  const i = seq.indexOf(focus);
+  const i = path.indexOf(focus);
+  const roles = pathOf(plan);
+  const short = (id) => (id === "steps" ? "Your plan of action" : bubble(id).title);
   return (
     <>
-      <nav className="seq" aria-label="Bubbles">
-        {seq.map((id) => {
+      {/* The path: where you are (named), where you have been (filled), what is left (hollow). */}
+      <nav className="seq glass" aria-label="Your path">
+        {path.map((id, k) => {
           const b = bubble(id);
-          return <button key={id} className={id === focus ? "now" : ""} style={{ "--c": STATUS_COLOR[b.status] }} title={b.title} aria-label={b.title} aria-current={id === focus} onClick={() => jump(id)} />;
+          const r = roles.indexOf(id);
+          const now = id === focus;
+          const label = `${r >= 0 ? `${ROLE[r]}: ` : ""}${short(id)} (${k + 1} of ${path.length})${explored[id] ? ", explored" : ", not explored yet"}`;
+          return (
+            <button
+              key={id}
+              className={`${now ? "now" : ""} ${explored[id] ? "seen" : ""} ${lit === id ? "lit" : ""}`}
+              style={{ "--c": STATUS_COLOR[b.status] }}
+              data-label={now ? undefined : label}
+              aria-label={label}
+              aria-current={now ? "step" : undefined}
+              onClick={() => jump(id)}
+            >
+              <i />
+              {now && (
+                <span className="seq-now">
+                  <span className="seq-k">
+                    {k + 1}/{path.length}
+                  </span>{" "}
+                  {short(id)}
+                </span>
+              )}
+            </button>
+          );
         })}
       </nav>
       {i > 0 && (
-        <button className="glass nav-arrow prev" onClick={() => go(-1)} aria-label="Previous bubble">
-          ‹
+        <button className="glass nav-arrow prev" onClick={() => go(-1)} aria-label={`Previous bubble: ${short(path[i - 1])}`}>
+          <span aria-hidden="true">‹</span>
+          <span className="na-name">{short(path[i - 1])}</span>
         </button>
       )}
-      {i < seq.length - 1 && (
-        <button className="glass nav-arrow next" onClick={() => go(1)} aria-label="Next bubble">
-          ›
+      {i >= 0 && i < path.length - 1 && (
+        <button className="glass nav-arrow next" onClick={() => go(1)} aria-label={`Next bubble: ${short(path[i + 1])}`}>
+          <span className="na-name">{short(path[i + 1])}</span>
+          <span aria-hidden="true">›</span>
         </button>
       )}
     </>
   );
 }
 
-function NextButton() {
-  const more = useStore((s) => {
-    const seq = s.seq();
-    return seq.indexOf(s.focus) < seq.length - 1;
-  });
-  const go = useStore((s) => s.go);
-  if (!more) return null;
+function NextButton({ primary = true }) {
+  const path = useStore(useShallow((s) => s.seq()));
+  const focus = useStore((s) => s.focus);
+  const { go, jump } = useStore.getState();
+  const i = path.indexOf(focus);
+  // Off the path (a topic opened from "All topics"), the way on is the plan of action.
+  if (i < 0)
+    return (
+      <button className={`btn ${primary ? "primary" : ""}`} onClick={() => jump("steps")}>
+        Your next steps ›
+      </button>
+    );
+  if (i >= path.length - 1) return null;
   return (
-    <button className="btn primary" onClick={() => go(1)}>
-      Next bubble ›
+    <button className={`btn ${primary ? "primary" : ""}`} onClick={() => go(1)}>
+      {path[i + 1] === "steps" ? "Your plan of action ›" : `Next bubble · ${i + 2} of ${path.length} ›`}
     </button>
   );
 }
+
+// "All topics": every bubble of the plan, one zoom out from the path.
+function Overview() {
+  const plan = useStore((s) => s.plan);
+  const missions = useStore((s) => s.missions);
+  const focus = useStore((s) => s.focus);
+  const { jump, setOverview, allTopics, bubble } = useStore.getState();
+  const path = pathOf(plan);
+  const close = () => setOverview(false);
+  useOverlayEscape(close);
+  const first = useRef();
+  useEffect(() => first.current?.focus(), []);
+  const ids = [...allTopics(), "steps"];
+  return (
+    <div className="overview" role="dialog" aria-modal="true" aria-label="All topics">
+      <button className="icon-btn bs-close" onClick={close} aria-label="Close">
+        ✕
+      </button>
+      <div className="ov-col">
+        <div className="eyebrow">{plan.label}'s money</div>
+        <h2>All topics</h2>
+        <p className="mute">The walk-through visits them in this order. Open any one whenever you like.</p>
+        <ul className="ov-grid">
+          {ids.map((id, n) => {
+            const b = bubble(id);
+            const h = hero(b, plan, missions);
+            const k = path.indexOf(id);
+            return (
+              <li key={id}>
+                <button ref={n === 0 ? first : undefined} className={`ov-tile ${id === focus ? "here" : ""}`} onClick={() => jump(id)}>
+                  <span className="ov-orb" aria-hidden="true">
+                    {h ? (
+                      <>
+                        <b>{h.big}</b>
+                        {h.unit && <small>{h.unit}</small>}
+                      </>
+                    ) : null}
+                  </span>
+                  <span className="ov-text">
+                    {k >= 0 && <span className="ov-role">{ROLE[k]}</span>}
+                    <b>{b.title}</b>
+                    <span className="ov-status">
+                      {b.status !== "neutral" && <Dot status={b.status} />} {id === "steps" ? (h ? `${h.big.split("/")[0]} of ${h.big.split("/")[1]} ${h.small}` : "") : STATUS_WORD[b.status]}
+                    </span>
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+// ---- Outside --------------------------------------------------------------------------------
 
 // What waits inside each kind of bubble, said in a way that makes you want to look.
 const TEASER = {
@@ -154,69 +283,204 @@ const TEASER = {
   allocation: "Turn your mix of investments around and compare it with the target.",
   score: "Switch on the steps in your plan and watch your score climb.",
   assumptions: "Check the few things your whole plan takes for granted.",
-  steps: "Your three missions this month, and your month-end review.",
+  steps: "Your missions this month, and your month-end review.",
 };
 
 // The one number that matters most for this bubble, straight from the plan.
-function hero(b, plan, missions) {
+export function hero(b, plan, missions) {
   const d = b.miniapp.data || {};
   if (b.id === "steps") {
     const done = missions.active.filter((id) => missions.status[id] === "done").length;
-    return { big: `${done}/${missions.active.length}`, small: "missions done this month", bar: missions.active.length ? done / missions.active.length : 0 };
+    return { big: `${done}/${missions.active.length}`, unit: "done", small: "missions done this month", bar: missions.active.length ? done / missions.active.length : 0 };
   }
-  if (b.miniapp.template === "score") return { big: String(d.score), small: `out of 100 · ${plan.score.band}`, bar: d.score / 100 };
+  if (b.miniapp.template === "score") return { big: String(d.score), unit: "of 100", small: `out of 100 · ${plan.score.band}`, bar: d.score / 100, score: true };
   if (b.miniapp.template === "timeline") {
     return d.runsOutAge
-      ? { big: String(d.runsOutAge), small: `the age your savings run out. Your plan runs to ${d.endAge}.` }
-      : { big: String(d.endAge), small: "your savings last to the end of the plan" };
+      ? { big: String(d.runsOutAge), unit: "age", small: `the age your savings run out. Your plan runs to ${d.endAge}.` }
+      : { big: String(d.endAge), unit: "age", small: "your savings last to the end of the plan" };
   }
-  if (b.miniapp.template === "college") return { big: usdShort(d.totalGap), small: "still to fund for college" };
-  if (b.miniapp.template === "assumptions") return { big: String(d.items?.length || 0), small: "things your plan takes for granted" };
+  if (b.miniapp.template === "college") return { big: usdShort(d.totalGap), unit: "to fund", small: "still to fund for college" };
+  if (b.miniapp.template === "assumptions") return { big: String(d.items?.length || 0), unit: "items", small: "things your plan takes for granted" };
   if (b.points) {
     const [got, of] = String(b.points).split("/").map(Number);
-    return { big: b.points, small: "points in your Sherpas score", bar: of ? got / of : null };
+    return { big: b.points, unit: "points", small: "points in your Sherpas score", bar: of ? got / of : null, score: true };
   }
   return null;
+}
+
+function ScoreExplainer({ plan, b }) {
+  const [open, setOpen] = useState(false);
+  const areas = plan.bubbles.find((x) => x.id === "score")?.miniapp.data.pillars?.length || 0;
+  const [, of] = String(b.points || "").split("/");
+  return (
+    <span className="score-help">
+      <button className="q" onClick={() => setOpen(!open)} aria-expanded={open} aria-label="What is the Sherpas score?">
+        ?
+      </button>
+      {open && (
+        <span className="score-help-text" role="note">
+          Sherpas rates your plan's health from 0 to 100. Yours is {plan.score.value} today.{areas ? ` It adds up ${areas} areas` : ""}
+          {of ? `; this one can give up to ${of} points.` : "."}
+        </span>
+      )}
+    </span>
+  );
+}
+
+// ---- Guess before you see -------------------------------------------------------------------
+function GuessCard({ g, onDone, onSkip }) {
+  const [v, setV] = useState(g.start);
+  const [touched, setTouched] = useState(false);
+  return (
+    <div className="guess" role="group" aria-labelledby="guess-q">
+      <span className="guess-tag">Before you step in, guess</span>
+      <p id="guess-q" className="guess-q">
+        {g.q}
+      </p>
+      <div className="guess-value" aria-live="polite">
+        {touched ? g.show(v) : "?"}
+      </div>
+      <input
+        className="guess-range"
+        type="range"
+        min={g.min}
+        max={g.max}
+        step={g.step}
+        value={v}
+        aria-label="Your guess"
+        aria-valuetext={g.show(v)}
+        onChange={(e) => {
+          setTouched(true);
+          setV(Number(e.target.value));
+        }}
+      />
+      <div className="guess-scale" aria-hidden="true">
+        <span>{g.show(g.min)}</span>
+        <span>{g.show(g.max)}</span>
+      </div>
+      <div className="guess-ctl">
+        <button className="btn primary big" disabled={!touched} onClick={() => onDone(v)}>
+          {touched ? "Reveal ›" : "Move the slider to guess"}
+        </button>
+        <button className="link" onClick={onSkip}>
+          Skip the guess
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function GuessReveal({ g, r }) {
+  const [shown, setShown] = useState(g.min);
+  useEffect(() => {
+    const t0 = performance.now();
+    let raf;
+    const tick = (now) => {
+      const k = Math.min(1, (now - t0) / 1100);
+      const e = 1 - Math.pow(1 - k, 3);
+      setShown(g.min + (g.real - g.min) * e);
+      if (k < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+  const pct = (x) => `${((x - g.min) / (g.max - g.min)) * 100}%`;
+  const value = g.step < 1 ? Math.round(shown * 10) / 10 : Math.round(shown);
+  return (
+    <div className={`guess-reveal ${r.near ? "near" : ""}`} aria-live="polite">
+      <div className="gr-pop" aria-hidden="true">
+        {Array.from({ length: 10 }, (_, i) => (
+          <i key={i} style={{ "--a": `${i * 36}deg`, "--d": `${(i % 3) * 0.06}s` }} />
+        ))}
+      </div>
+      <div className="gr-num">{g.show(value)}</div>
+      <div className="gr-head">{r.head}</div>
+      <div className="gr-track" aria-hidden="true">
+        <span className="gr-you" style={{ left: pct(r.value) }}>
+          you
+        </span>
+        <span className="gr-real" style={{ left: pct(g.real) }} />
+      </div>
+      <p className="gr-line">
+        You guessed {g.show(r.value)}. {r.line}
+      </p>
+    </div>
+  );
 }
 
 function Outside({ b }) {
   const enter = useStore((s) => s.enter);
   const plan = useStore((s) => s.plan);
   const missions = useStore((s) => s.missions);
+  const hinted = useStore((s) => s.hinted);
   const stepHere = useStore((s) => s.journeyDone && s.currentMission()?.bubbleId === b.id);
+  const k = pathOf(plan).indexOf(b.id);
   const h = hero(b, plan, missions);
   // Every concern comes with its way forward, right next to it.
   const hope = hopeFor(b, plan);
+  const g = guessFor(b);
+  const guessed = useStore((s) => s.guessed[b.id]);
+  const [reveal, setReveal] = useState(null);
+  const pending = Boolean(g) && guessed === undefined;
   useEffect(() => {
     const t = setTimeout(() => {
+      if (pending) return speak(`Before you step in, a guess. ${g.q}`);
       const line = fresh(b.id, [outsideLine(b.title, b.building), b.emotion?.stakes, hope].filter(Boolean).join(" ")).parts.join(" ");
-      if (!line) return;
-      heard(b.id, line);
-      speak(line);
-    }, 900);
+      const lead = reveal ? `${reveal.head} ${reveal.line}` : "";
+      if (!line && !lead) return;
+      if (line) heard(b.id, line);
+      speak([lead, line].filter(Boolean).join(" "));
+    }, reveal ? 500 : 900);
     return () => {
       clearTimeout(t);
       stopSpeaking();
     };
-  }, [b.id]);
+  }, [b.id, pending]);
   const go = () => {
     sfx("whoosh");
     enter(b.id);
   };
   return (
     <div className="outside" key={b.id}>
+      {!hinted && (
+        <div className="out-hint" aria-hidden="true">
+          Tap the bubble to step inside
+        </div>
+      )}
       <div className="out-panel">
         <span className="out-status">
-          {b.status !== "neutral" && <Dot status={b.status} />} {STATUS_WORD[b.status]}
+          {k >= 0 && <span className="out-role">{ROLE[k]}</span>}
+          {b.id !== "steps" && (
+            <span className="out-state">
+              <Dot status={b.status} /> {STATUS_WORD[b.status]}
+            </span>
+          )}
           {stepHere && <span className="b-step">Your next step is in here</span>}
         </span>
         <h1 className="out-title">{b.title}</h1>
+        {pending ? (
+          <GuessCard
+            g={g}
+            onDone={(value) => {
+              const v = guessVerdict(g, value);
+              setReveal({ ...v, value });
+              sfx("ding");
+              useStore.getState().setGuess(b.id, value);
+            }}
+            onSkip={() => useStore.getState().setGuess(b.id, null)}
+          />
+        ) : (
+          <>
+        {reveal && <GuessReveal g={g} r={reveal} />}
         {h && (
           <div className={`out-hero s-${b.status}`}>
             <b>{h.big}</b>
-            <span>{h.small}</span>
+            <span>
+              {h.small}
+              {h.score && <ScoreExplainer plan={plan} b={b} />}
+            </span>
             {h.bar != null && (
-              <i className="out-bar">
+              <i className="out-bar" aria-hidden="true">
                 <i style={{ width: `${Math.max(2, h.bar * 100)}%` }} />
               </i>
             )}
@@ -225,7 +489,7 @@ function Outside({ b }) {
         <p className="out-lede" data-ask>
           {b.building}
         </p>
-        {b.emotion?.stakes && (
+        {b.emotion?.stakes && !reveal && (
           <p className="out-stakes" data-ask>
             {b.emotion.stakes}
           </p>
@@ -237,28 +501,56 @@ function Outside({ b }) {
           </div>
         )}
         <div className="out-cta">
-          <button className="btn primary big" onClick={go}>
-            Step inside ›
+          <button className="btn primary big zbtn" onClick={go}>
+            <ZoomIcon dir="in" /> Step inside
           </button>
           <span className="mute small">{TEASER[b.miniapp.template] || "A short explanation, something to play with and the detailed charts."}</span>
         </div>
+          </>
+        )}
       </div>
     </div>
   );
 }
 
+// ---- Inside ---------------------------------------------------------------------------------
+
+// The free band between the text above and the controls below, where the 3D toy is drawn.
+function useToyBand() {
+  const ref = useRef();
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const report = () => {
+      const r = el.getBoundingClientRect();
+      useStore.setState({ toyBand: { top: r.top, bottom: r.bottom, left: r.left, right: r.right } });
+    };
+    report();
+    const ro = new ResizeObserver(report);
+    ro.observe(el);
+    window.addEventListener("resize", report);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", report);
+      useStore.setState({ toyBand: null });
+    };
+  }, []);
+  return ref;
+}
+
 function Inside({ b }) {
-  const kind = useStore((s) => s.profile().kind);
   const chatOpen = useStore((s) => s.chat.open);
-  const move = useStore((s) => s.plan.moves.find((m) => m.bubbleId === b.id));
-  const mission = useStore((s) => s.activeMissions().find((m) => m.bubbleId === b.id && s.missions.status[m.id] !== "done"));
-  const { simpler, deeper, openDecision } = useStore.getState();
+  const { simpler, deeper } = useStore.getState();
+  const band = useToyBand();
   // Inside is always the simple version. The detailed one is one level deeper.
   const text = b.floor.plain;
   const k = useKaraoke(b.id, text, b.voice?.inside);
   // The moment to act comes once the explanation has landed.
   const [ready, setReady] = useState(false);
   const wasPlaying = useRef(false);
+  useEffect(() => {
+    useStore.setState({ hinted: true });
+  }, []);
   useEffect(() => {
     if (k.playing) wasPlaying.current = true;
     else if (wasPlaying.current || k.nothingNew) {
@@ -268,29 +560,24 @@ function Inside({ b }) {
   }, [k.playing, k.nothingNew]);
   useEffect(() => {
     const t = setTimeout(() => setReady(true), 14000);
-    return () => {
-      clearTimeout(t);
-      useStore.setState({ actReady: false });
-    };
+    return () => clearTimeout(t);
   }, []);
-  useEffect(() => {
-    useStore.setState({ actReady: ready });
-  }, [ready]);
   useEffect(() => {
     if (chatOpen) k.stop();
   }, [chatOpen]);
+  const toyless = b.miniapp.template === "assumptions";
   return (
     <div className="inside">
       <header className="in-head">
-        <h2>
+        <h1>
           <Dot status={b.status} /> {b.title}
-        </h2>
+        </h1>
         <span className="mute small">
           {STATUS_WORD[b.status]}
           {b.points ? ` · ${b.points} points in your score` : ""}
         </span>
       </header>
-      <p className={`in-line ${k.playing ? "karaoke" : ""}`} data-ask key={k.playing ? k.cur : "all"}>
+      <p className={`in-line ${k.playing ? "karaoke" : ""}`} data-ask key={k.playing ? k.cur : "all"} aria-live="polite">
         {k.playing ? k.parts[k.cur] : text}
       </p>
       {k.playing && k.parts.length > 1 && (
@@ -300,41 +587,38 @@ function Inside({ b }) {
           ))}
         </div>
       )}
-      {b.miniapp.template === "assumptions" && (
+      {toyless ? (
         <div className="in-free bare">
           <MiniApp bubble={b} />
         </div>
+      ) : (
+        <div className="toy-space" ref={band} aria-hidden="true" />
       )}
       <div className="in-bottom">
-        {kind === "action" && move && (
-          <p className="in-do" data-ask>
-            <b>What your plan suggests:</b> {move.title}.
-          </p>
-        )}
         <ActionMoment b={b} ready={ready} />
         <MustLine items={b.mustKnow} />
         <div className="in-ctl">
-          <button className="btn" onClick={k.playing ? k.stop : k.play}>
-            {k.playing ? "Pause" : "Listen again"}
-          </button>
-          <button className="btn" onClick={simpler}>
-            ‹ Step out
+          <ListenButton k={k} />
+          <button className="btn zbtn" onClick={() => useStore.getState().stepOut()}>
+            <ZoomIcon dir="out" /> Step out
           </button>
           <button
-            className="btn"
+            className="btn zbtn"
             onClick={() => {
               sfx("whoosh");
-              deeper();
+              useStore.getState().stepIn();
             }}
           >
-            In more detail ›
+            <ZoomIcon dir="in" /> Step in for the detail
           </button>
-          <NextButton />
+          <NextButton primary={false} />
         </div>
       </div>
     </div>
   );
 }
+
+// ---- In detail --------------------------------------------------------------------------------
 
 function Deeper({ b }) {
   const setLevel = useStore((s) => s.setLevel);
@@ -348,12 +632,12 @@ function Deeper({ b }) {
   return (
     <div className="inside deeper">
       <header className="in-head">
-        <h2>
+        <h1>
           <Dot status={b.status} /> {b.title}
-        </h2>
-        <span className="mute small">In more detail</span>
+        </h1>
+        <span className="mute small">In detail</span>
       </header>
-      <div className="detail-scroll">
+      <div className="detail-scroll" tabIndex={0} aria-label={`${b.title}, in detail`}>
         <p className="d-text" data-ask>
           {k.all.map((p, i) => (
             <span key={i} className={i === k.curInAll ? "now" : ""}>
@@ -368,17 +652,15 @@ function Deeper({ b }) {
       <div className="in-bottom">
         <MustLine items={b.mustKnow} />
         <div className="in-ctl">
-          <button className="btn" onClick={k.playing ? k.stop : k.play}>
-            {k.playing ? "Pause" : "Listen"}
-          </button>
+          <ListenButton k={k} />
           <button
             className="btn"
             onClick={() => {
               sfx("whoosh");
-              setLevel(2);
+              useStore.getState().stepOut();
             }}
           >
-            ‹ Simpler
+            <ZoomIcon dir="out" /> Step out
           </button>
           {b.analysis.length > 0 && (
             <button className="btn" onClick={() => setOpen(true)}>
@@ -406,23 +688,119 @@ function Deeper({ b }) {
   );
 }
 
-function Zoomer() {
+// The cloud: a returning visit starts here. The bubbles themselves (and their labels) are
+// drawn in the 3D scene; this is the words around them.
+function CloudHome() {
+  const plan = useStore((s) => s.plan);
+  const person = useStore((s) => s.person);
+  const proj = useStore((s) => s.projected().score);
+  const lastFocus = useStore((s) => s.lastFocus);
+  const explored = useStore((s) => s.explored);
+  const total = useStore.getState().allTopics();
+  const left = total.filter((id) => !explored[id]).length;
+  const last = lastFocus ? plan.bubbles.find((b) => b.id === lastFocus) : null;
+  const spoke = useRef(false);
+  useEffect(() => {
+    if (spoke.current) return;
+    spoke.current = true;
+    speak(`Welcome back${person ? `, ${person}` : ""}. Here is your whole plan. Tap any bubble to open it, or the blue one for this month.`);
+  }, []);
+  return (
+    <main className="stage deep cloud-home" aria-labelledby="cloud-title">
+      <header className="cloud-head">
+        <h1 id="cloud-title">{plan.label}'s plan</h1>
+        <p>
+          Sherpas score <b>{plan.score.value}</b>
+          {proj !== plan.score.value ? <> · {proj} projected</> : null} · {left ? `${total.length - left} of ${total.length} explored. Step into a dim bubble to light it up.` : "Every bubble explored. Tap any to revisit it."}
+        </p>
+      </header>
+      {last && (
+        <button className="btn primary continue-pill" onClick={() => useStore.getState().jump(last.id)}>
+          Continue with {last.title} ›
+        </button>
+      )}
+    </main>
+  );
+}
+
+// Zoom icons: one drawn pair, used on the rail and on the buttons.
+export function ZoomIcon({ dir }) {
+  return (
+    <svg className="zoom-ico" viewBox="0 0 20 20" aria-hidden="true">
+      <circle cx="8.5" cy="8.5" r="6" fill="none" stroke="currentColor" strokeWidth="1.8" />
+      <path d="M13 13l4.5 4.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <path d={dir === "in" ? "M5.6 8.5h5.8M8.5 5.6v5.8" : "M5.6 8.5h5.8"} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+// The zoom, made visible: a ladder on the right edge, deepest at the top like a map's zoom.
+// Every stop is named, the current one is marked, and "Step in" / "Step out" say what they do.
+const STOPS = [
+  { id: 1, name: "In detail", hint: "Every figure and chart" },
+  { id: 2, name: "Inside", hint: "The simple explanation" },
+  { id: 3, name: "Outside", hint: "The bubble in one sentence" },
+  { id: "all", name: "All topics", hint: "Every bubble at once" },
+];
+function ZoomRail() {
   const level = useStore((s) => s.level);
   const focus = useStore((s) => s.focus);
-  const { setLevel, enter } = useStore.getState();
-  const stops = [
-    [3, "Outside", "One sentence"],
-    [2, "Inside", "The simple version"],
-    [1, "Deeper", "In more detail"],
-  ];
+  const overview = useStore((s) => s.overview);
+  const home = useStore((s) => s.home);
+  const zoomHinted = useStore((s) => s.zoomHinted);
+  const hinted = useStore((s) => s.hinted);
+  const journeyDone = useStore((s) => s.journeyDone);
+  const { stepIn, stepOut, setLevel, enter, setOverview, goHome, dismissZoomHint } = useStore.getState();
+  const here = overview || home ? "all" : level;
+  const deepest = focus === "steps" ? 2 : 1;
+  const canIn = here === "all" || here > deepest;
+  const canOut = here !== "all";
+  const goTo = (id) => {
+    dismissZoomHint();
+    if (id === "all") return journeyDone ? goHome() : setOverview(true);
+    setOverview(false);
+    if (home) useStore.getState().jump(focus);
+    if (id === 3) return setLevel(3);
+    if (useStore.getState().level === 3) enter(focus);
+    if (id === 1) setLevel(1);
+  };
+  // The hint shows once, after the first "tap the bubble" hint has been seen.
+  const showHint = !zoomHinted && hinted;
   return (
-    <nav className="seg zoomer" aria-label="Zoom">
-      {stops.map(([l, name, hint]) => (
-        <button key={l} className={level === l ? "on" : ""} disabled={focus === "steps" && l === 1} onClick={() => (l === 2 && level === 3 ? enter(focus) : setLevel(l))} aria-current={level === l} title={hint}>
-          {name}
+    <>
+      <nav className="zoom-rail glass" aria-label="Zoom">
+        <button className="zr-step" onClick={() => (sfx("whoosh"), stepIn())} disabled={!canIn} aria-label="Step in: more detail">
+          <ZoomIcon dir="in" />
+          <span>Step in</span>
         </button>
-      ))}
-    </nav>
+        <ol className="zr-stops">
+          {STOPS.map((st) => {
+            const off = st.id === 1 && deepest === 2;
+            const on = here === st.id;
+            return (
+              <li key={st.id}>
+                <button className={on ? "on" : ""} disabled={off} aria-current={on ? "true" : undefined} onClick={() => goTo(st.id)} title={st.hint}>
+                  <span className="zr-name">{st.name}</span>
+                  <i aria-hidden="true" />
+                </button>
+              </li>
+            );
+          })}
+        </ol>
+        <button className="zr-step" onClick={() => (sfx("whoosh"), stepOut())} disabled={!canOut} aria-label="Step out: the bigger picture">
+          <ZoomIcon dir="out" />
+          <span>Step out</span>
+        </button>
+      </nav>
+      {showHint && (
+        <div className="zoom-hint glass" role="note">
+          <b>This is your zoom.</b> Step in for more detail, step out for the bigger picture. Scrolling or pinching works too.
+          <button className="link" onClick={dismissZoomHint}>
+            Got it
+          </button>
+        </div>
+      )}
+    </>
   );
 }
 
@@ -430,18 +808,22 @@ export function Stage() {
   const flat = useStore((s) => s.easy || s.simple);
   const level = useStore((s) => s.level);
   const focus = useStore((s) => s.focus);
+  const overview = useStore((s) => s.overview);
+  const home = useStore((s) => s.home);
   const month = useStore((s) => s.missions.month);
   if (flat) return <FlatStage />;
+  if (home) return <CloudHome />;
   const b = useStore.getState().bubble(focus || "steps");
   if (!b) return null;
   return (
-    <div className={`stage deep level-${level}`} data-month={month}>
+    <main className={`stage deep level-${level}`} data-month={month}>
       <SeqNav />
       {level >= 3 && <Outside b={b} key={`o-${b.id}`} />}
       {level === 2 && (b.id === "steps" ? <StepsInside /> : <Inside b={b} key={`i-${b.id}`} />)}
       {level === 1 && <Deeper b={b} key={`d-${b.id}`} />}
-      <Zoomer />
+      <ZoomRail />
       {b.id !== "steps" && level >= 3 && <MissionChip />}
-    </div>
+      {overview && <Overview />}
+    </main>
   );
 }

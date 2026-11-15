@@ -8,8 +8,10 @@ import { easing } from "maath";
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { isSpeaking, sfx, speechLevel } from "../audio.js";
-import { STATUS_COLOR } from "../format.js";
+import { STATUS_COLOR, STATUS_WORD } from "../format.js";
 import { computeLayout, DECOR } from "../layout.js";
+import { monthInfo } from "../month.js";
+import { hero } from "../ui/Deep.jsx";
 import { useStore } from "../store.js";
 import { DissolveParticles, dissolve, samplePoints } from "./Dissolve.jsx";
 import Toy, { bursts } from "./Toys.jsx";
@@ -93,7 +95,7 @@ function Shadow({ r, hidden }) {
 
 // ---- Camera -----------------------------------------------------------------------------
 
-function Rig({ layout }) {
+function Rig({ layout, cloud }) {
   const { camera, size } = useThree();
   const look = useRef(new THREE.Vector3());
   useFrame((_, dt) => {
@@ -106,6 +108,11 @@ function Rig({ layout }) {
       const shift = aspect > 1.2 ? -layout.halfW * 0.85 : 0;
       p = [shift, 0, d];
       l = [shift, 0, 0];
+    } else if (s.home && s.phase === "cloud" && cloud) {
+      const d = Math.max(cloud.halfH / (TAN * 0.64), cloud.halfW / (TAN * aspect * 0.84)) + 0.4;
+      const lift = TAN * d * 0.02;
+      p = [0, lift, d];
+      l = [0, lift, 0];
     } else if (s.phase === "forming" || s.phase === "calibrate") {
       const fill = s.phase === "calibrate" ? 0.86 : 0.5;
       const d = Math.max(R / (TAN * fill), R / (TAN * aspect * 0.9));
@@ -185,12 +192,38 @@ function Interior({ bubble }) {
     }
   }, [level]);
 
+  // The toy is fitted into the free band the page leaves for it (between the sentence above
+  // and the controls below), so its labels never sit under the text or the buttons.
+  const lastScale = useRef(0);
   useFrame((_, dt) => {
     const s = useStore.getState();
-    const unit = ((R * INSIDE[2] * TAN) / 3.3) * fit * (s.actReady && s.level === 2 ? 0.74 : 1);
-    easing.damp3(group.current.scale, [unit, unit, unit], s.reduced ? 0.0001 : 0.45, dt);
-    easing.damp(group.current.position, "y", s.actReady && s.level === 2 ? unit * 0.32 : unit * 0.05, 0.45, dt);
+    const base = ((R * INSIDE[2] * TAN) / 3.3) * fit;
+    const halfH = R * INSIDE[2] * TAN;
+    const halfW = halfH * aspect;
+    let unit = base;
+    let y = base * 0.05;
+    const band = s.toyBand;
+    if (band && s.level === 2) {
+      const H = size.height;
+      const W = size.width;
+      // Keep a clear gap above whatever sits under the toy (labels are drawn in screen pixels).
+      const bottom = band.bottom - 26;
+      const usableH = ((bottom - band.top) / H) * 2 * halfH;
+      const usableW = ((band.right - band.left) / W) * 2 * halfW;
+      // The toys span about 5.7 by 3.2 in their own units, centred slightly below zero.
+      unit = Math.max(0.0001, Math.min(usableH / 3.4, usableW / 5.8, base * 1.15));
+      const centre = (band.top + bottom) / 2;
+      y = (1 - (2 * centre) / H) * halfH + 0.3 * unit;
+    }
+    easing.damp3(group.current.scale, [unit, unit, unit], s.reduced ? 0.0001 : 0.35, dt);
+    easing.damp(group.current.position, "y", y, s.reduced ? 0.0001 : 0.35, dt);
     if (toy.current) easing.damp3(toy.current.scale, [1, 1, 1], s.reduced ? 0.0001 : 0.28, dt);
+    // Labels drawn over the toy scale with it.
+    const k = Math.max(0.62, Math.min(1.1, unit / base));
+    if (Math.abs(k - lastScale.current) > 0.02) {
+      lastScale.current = k;
+      document.documentElement.style.setProperty("--toy-scale", k.toFixed(3));
+    }
   });
   return (
     <group ref={group} scale={0.0001}>
@@ -395,7 +428,7 @@ function PlanBubble({ id }) {
     const s = useStore.getState();
     const t = st.clock.elapsedTime;
     let target = 0.0001;
-    if (active && s.phase !== "month") {
+    if (active && !s.home && s.phase !== "month" && s.phase !== "meeting") {
       const k = Math.min(1, Math.max(0, (formClock.t - 0.55) / 0.8));
       target = Math.max(0.0001, k * k * (3 - 2 * k)) * (hovered && s.level === 3 ? 1.03 : 1);
     }
@@ -416,7 +449,8 @@ function PlanBubble({ id }) {
     }
   });
 
-  const clickable = active && level === 3 && browsing;
+  const home = useStore((s) => s.home);
+  const clickable = active && level === 3 && browsing && !home;
   return (
     <group ref={group} scale={0.0001}>
       <mesh
@@ -445,14 +479,14 @@ function PlanBubble({ id }) {
         <meshBasicMaterial color="#ffffff" side={THREE.BackSide} transparent opacity={0} depthWrite={false} toneMapped={false} />
       </mesh>
       <Shadow r={R} hidden={inside} />
-      {active && <SpeechWaves r={R} show={!inside && phase !== "month"} />}
+      {active && <SpeechWaves r={R} show={!inside && phase !== "month" && phase !== "meeting"} />}
       {stepHere && active && (
         <mesh ref={ring}>
           <torusGeometry args={[R * 1.07, 0.022, 12, 120]} />
           <meshBasicMaterial color="#0071E3" transparent opacity={0.75} toneMapped={false} />
         </mesh>
       )}
-      {active && level === 3 && browsing && <Preview bubble={bubble} key={`p-${id}`} />}
+      {active && level === 3 && browsing && !home && <Preview bubble={bubble} key={`p-${id}`} />}
       <MicroBubbles visible={inside} />
       {inside && <Interior bubble={bubble} />}
     </group>
@@ -478,12 +512,150 @@ function DecorBubble({ node, index }) {
   );
 }
 
+// ---- The cloud: every bubble at once, for a returning visit ---------------------------------
+// Size follows how much each area weighs in the plan; the month sits in the cloud as its own
+// bubble. Tap (or tab to) a bubble to fly into it.
+const WEIGHT = { red: 0.62, amber: 0.5, green: 0.46, neutral: 0.34 };
+function cloudNodes(plan) {
+  return [
+    ...plan.order.filter((id) => id !== "score"),
+    ...plan.bubbles.map((b) => b.id).filter((id) => !plan.order.includes(id) && id !== "score"),
+    "score",
+    "steps",
+  ].map((id) => {
+    const b = plan.bubbles.find((x) => x.id === id);
+    const weight = id === "score" ? 1 : id === "steps" ? 0.8 : WEIGHT[b?.status] ?? 0.4;
+    return { id, weight };
+  });
+}
+
+function CloudBubble({ node, index, plan, missions, labels }) {
+  const group = useRef();
+  const wasHere = useStore((s) => s.lastFocus === node.id);
+  const lit = useStore((s) => node.id === "steps" || Boolean(s.explored[node.id]));
+  const glow = useRef();
+  // A soft halo behind the glass, in the bubble's own colour: that is what "lit" looks like.
+  const halo = useCanvasTexture((g, w, h) => {
+    const grd = g.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w / 2);
+    grd.addColorStop(0, "rgba(255,255,255,1)");
+    grd.addColorStop(0.45, "rgba(255,255,255,0.75)");
+    grd.addColorStop(1, "rgba(255,255,255,0)");
+    g.fillStyle = grd;
+    g.fillRect(0, 0, w, h);
+  }, 128, 128);
+  const [hovered, setHovered] = useState(false);
+  const isMonth = node.id === "steps";
+  const b = isMonth ? null : plan.bubbles.find((x) => x.id === node.id);
+  const open = () => {
+    sfx("whoosh");
+    const s = useStore.getState();
+    if (isMonth) s.openMonthPage();
+    else s.jump(node.id);
+  };
+  useFrame((st, dt) => {
+    const t = st.clock.elapsedTime;
+    const s = useStore.getState();
+    const float = s.reduced ? 0 : 1;
+    const k = hovered ? 1.05 : 1;
+    easing.damp3(group.current.scale, [k, k, k], s.reduced ? 0.0001 : 0.25 + index * 0.02, dt);
+    group.current.position.set(node.x + Math.cos(t * 0.4 + index) * 0.05 * float, node.y + Math.sin(t * 0.55 + index * 1.7) * 0.07 * float, node.z);
+    if (glow.current) easing.damp(glow.current.material, "opacity", lit ? 0.62 + Math.sin(t * 1.4 + index) * 0.08 : 0, 0.6, dt);
+  });
+  let big = "";
+  let unit = "";
+  let title = "";
+  let sub = "";
+  if (isMonth) {
+    const info = monthInfo();
+    const done = missions.active.filter((id) => missions.status[id] === "done").length;
+    big = String(info.daysLeft);
+    unit = info.daysLeft === 1 ? "day left" : "days left";
+    title = `This month`;
+    sub = `${done} of ${missions.active.length} missions done`;
+  } else {
+    const h = hero(b, plan, missions);
+    big = h?.big || "";
+    unit = h?.unit || "";
+    title = node.id === "score" ? "Your Sherpas score" : b.title;
+    sub = STATUS_WORD[b.status];
+  }
+  return (
+    <>
+      <group ref={group} scale={0.0001}>
+        <mesh
+          onClick={(e) => {
+            e.stopPropagation();
+            open();
+          }}
+          onPointerOver={() => {
+            setHovered(true);
+            document.body.style.cursor = "pointer";
+          }}
+          onPointerOut={() => {
+            setHovered(false);
+            document.body.style.cursor = "";
+          }}
+        >
+          <sphereGeometry args={[node.r, 64, 64]} />
+          <Glass r={node.r} />
+        </mesh>
+        <Shadow r={node.r} />
+        {!isMonth && (
+          <mesh ref={glow} position={[0, 0, -node.r * 0.9]}>
+            <planeGeometry args={[node.r * 2.9, node.r * 2.9]} />
+            <meshBasicMaterial map={halo} color="#FFC53D" transparent opacity={0} depthWrite={false} toneMapped={false} />
+          </mesh>
+        )}
+        {isMonth && (
+          <mesh>
+            <torusGeometry args={[node.r * 1.06, 0.02, 12, 120]} />
+            <meshBasicMaterial color="#0071E3" transparent opacity={0.6} toneMapped={false} />
+          </mesh>
+        )}
+      </group>
+      {labels && (
+        <Html center position={[node.x, node.y, node.z + 0.1]} zIndexRange={[8, 0]}>
+          <button
+            className={`cloud-label ${isMonth ? "month" : ""} ${node.id === "score" ? "score" : ""} ${lit ? "" : "dim"}`}
+            style={{ "--c": isMonth ? "#0071E3" : STATUS_COLOR[b.status], "--r": node.r }}
+            onClick={open}
+            onMouseEnter={() => setHovered(true)}
+            onMouseLeave={() => setHovered(false)}
+            aria-label={`${title}: ${big} ${unit}. ${sub}`}
+          >
+            <span className="cl-big">
+              {big}
+              {unit && <small>{unit}</small>}
+            </span>
+            <b>{title}</b>
+            <span className="cl-sub">
+              <i aria-hidden="true" />
+              {sub}
+            </span>
+            {wasHere && <span className="cl-here">You were here</span>}
+            {!lit && <span className="cl-dim">Not explored yet</span>}
+          </button>
+        </Html>
+      )}
+    </>
+  );
+}
+
+function Cloud({ cloud, labels }) {
+  const plan = useStore((s) => s.plan);
+  const missions = useStore((s) => s.missions);
+  return cloud.nodes.map((n, i) => <CloudBubble key={n.id} node={n} index={i} plan={plan} missions={missions} labels={labels} />);
+}
+
 function Scene() {
   const plan = useStore((s) => s.plan);
   const focus = useStore((s) => s.focus);
   const { size } = useThree();
   const layout = useMemo(() => computeLayout(DECOR, size.width / size.height < 0.85), [size.width < size.height * 0.85]);
   const ids = useMemo(() => (plan ? [...plan.bubbles.map((b) => b.id), "steps"] : []), [plan]);
+  const portrait = size.width / size.height < 0.85;
+  const cloud = useMemo(() => (plan ? computeLayout(cloudNodes(plan), portrait) : null), [plan, portrait]);
+  const showCloud = useStore((s) => s.home && s.phase === "cloud" && !s.easy && !s.simple);
   const [labelReady, setLabelReady] = useState(false);
   useEffect(() => {
     let a = requestAnimationFrame(() => (a = requestAnimationFrame(() => setLabelReady(true))));
@@ -510,7 +682,8 @@ function Scene() {
         <Lightformer form="circle" intensity={2.2} color="#ffd6e6" position={[10, -1, 1]} scale={6} target={[0, 0, 0]} />
         <Lightformer form="circle" intensity={1.6} color="#dafbea" position={[2, -9, 3]} scale={6} target={[0, 0, 0]} />
       </Environment>
-      <Rig layout={layout} />
+      <Rig layout={layout} cloud={cloud} />
+      {plan && showCloud && cloud && <Cloud cloud={cloud} labels={labelReady} />}
       {!plan && layout.nodes.map((n, i) => <DecorBubble key={n.id} node={n} index={i} />)}
       {plan && ids.map((id) => <PlanBubble key={`${plan.family}-${id}`} id={id} />)}
       {plan && <Droplets />}
@@ -525,7 +698,11 @@ export default function World3D() {
   const pinch = useRef(null);
   const act = (dir) => {
     const s = useStore.getState();
-    if (!s.plan || (s.phase !== "cloud" && s.phase !== "journey") || s.chat.open) return;
+    if (!s.plan || (s.phase !== "cloud" && s.phase !== "journey") || s.chat.open || s.decision) return;
+    // One zoom vocabulary: All topics ‹ Outside ‹ Inside ‹ In detail.
+    if (s.overview) return dir > 0 ? s.setOverview(false) : null;
+    if (s.home) return dir > 0 ? s.jump(s.focus) : null;
+    if (dir < 0) return s.stepOut();
     if (dir > 0) {
       if (s.level === 3) s.enter(s.focus);
       else if (s.level === 2) s.deeper();

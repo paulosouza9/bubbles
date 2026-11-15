@@ -16,18 +16,36 @@ export function TopBar() {
   const person = useStore((s) => s.person);
   const kind = useStore((s) => s.profile().kind);
   const journeyDone = useStore((s) => s.journeyDone);
+  const home = useStore((s) => s.home);
+  const { goHome, openMonthPage, openMeeting } = useStore.getState();
+  const inMonth = phase === "month" || phase === "meeting";
   const { setLevel, back, setEasy, setMuted, setPerson, setProfile, setPhase, leave, reset, setDay, showToast, startJourney } = useStore.getState();
   const [menu, setMenu] = useState(false);
+  const [sure, setSure] = useState(false);
+  const toggleMenu = (open) => {
+    setMenu(open);
+    setSure(false);
+  };
+  // The "jump ahead in time" shortcuts are for presenting the demo: open the app with ?demo.
+  const demo = typeof location !== "undefined" && new URLSearchParams(location.search).has("demo");
   const b = focus ? useStore.getState().bubble(focus) : null;
   const inStage = phase === "cloud" || phase === "journey";
-  const canBack = inStage && level < 3;
-  const quick = useStore((s) => s.activeMissions().find((m) => s.missions.status[m.id] !== "done"));
+  const canBack = inStage && level < 3 && !home;
+  const trailTop = useStore((s) => s.trail.at(-1));
+  const seqPrev = useStore((s) => {
+    const q = s.plan && !s.flat() ? s.seq() : [];
+    return q[q.indexOf(s.focus) - 1];
+  });
+  const backTo = inStage && level === 3 && !home && trailTop && trailTop !== seqPrev && trailTop !== focus ? useStore.getState().bubble(trailTop) : null;
+  // The nudge is about the step the person committed to, if there is one.
+  const quick = useStore((s) => s.currentMission());
 
   const day3 = () => {
     setMenu(false);
     if (!quick) return showToast({ text: "All of this month's missions are done. Nothing to nudge." });
     setDay(3);
-    const text = `Hi ${person}. One small thing from your plan: ${quick.title}. It takes about ${quick.minutes} minutes. Want to look at it now?`;
+    const planned = useStore.getState().missions.when?.[quick.id];
+    const text = `Hi ${person}. ${planned ? `You planned this for ${planned.toLowerCase()}` : "One small thing from your plan"}: ${quick.title}. It takes about ${quick.minutes} minutes. Want to look at it now?`;
     showToast({ text, voice: true, mission: quick.id, title: "Day 3 · a short voice note" });
     speak(text);
   };
@@ -45,6 +63,19 @@ export function TopBar() {
         >
           Burbuja
         </button>
+        {inMonth && (
+          <nav className="crumbs" aria-label="Where you are">
+            <button className="crumb" onClick={openMonthPage}>
+              This month
+            </button>
+            {phase === "meeting" && (
+              <>
+                <span className="sep">›</span>
+                <span className="crumb here">Month-end meeting</span>
+              </>
+            )}
+          </nav>
+        )}
         {inStage && (
           <nav className="crumbs" aria-label="Where you are">
             {canBack && (
@@ -52,10 +83,21 @@ export function TopBar() {
                 ‹ Back
               </button>
             )}
-            <button className="crumb" onClick={() => setLevel(3)}>
+            {backTo && (
+              <button className="btn back" onClick={() => useStore.getState().backToLast()}>
+                ‹ Back to {backTo.title}
+              </button>
+            )}
+            <button className="crumb" onClick={() => (journeyDone ? goHome() : setLevel(3))}>
               {plan.label}'s money
             </button>
-            {level <= 2 && b && (
+            {!home && journeyDone && level === 3 && b && phase === "cloud" && !useStore.getState().flat() && (
+              <>
+                <span className="sep">›</span>
+                <span className="crumb here">{b.title}</span>
+              </>
+            )}
+            {!home && level <= 2 && b && (
               <>
                 <span className="sep">›</span>
                 <button className="crumb" onClick={() => setLevel(2)}>
@@ -66,7 +108,7 @@ export function TopBar() {
             {level === 1 && (
               <>
                 <span className="sep">›</span>
-                <span className="crumb here">{useStore.getState().flat() ? "The figures" : "In more detail"}</span>
+                <span className="crumb here">In detail</span>
               </>
             )}
             {level === 4 && (
@@ -79,6 +121,16 @@ export function TopBar() {
         )}
       </div>
       <div className="top-right">
+        {journeyDone && (inStage || inMonth) && (
+          <nav className="seg top-sections" aria-label="Sections">
+            <button className={!inMonth ? "on" : ""} aria-current={!inMonth ? "page" : undefined} onClick={goHome}>
+              Your plan
+            </button>
+            <button className={inMonth ? "on" : ""} aria-current={inMonth ? "page" : undefined} onClick={openMonthPage}>
+              This month
+            </button>
+          </nav>
+        )}
         {plan.names.length > 1 && (
           <div className="seg small" role="tablist" aria-label="Who is here">
             {plan.names.map((n) => (
@@ -94,7 +146,7 @@ export function TopBar() {
         <button className="icon-btn" onClick={() => setMuted(!muted)} aria-label={muted ? "Turn the voice on" : "Turn the voice off"} title={muted ? "Voice is off" : "Voice is on"}>
           {muted ? "🔇" : "🔊"}
         </button>
-        <button className="icon-btn" onClick={() => setMenu(!menu)} aria-label="Menu" aria-expanded={menu}>
+        <button className="icon-btn" onClick={() => toggleMenu(!menu)} aria-label="Menu" aria-expanded={menu}>
           ⋯
         </button>
         {menu && (
@@ -106,14 +158,14 @@ export function TopBar() {
                 <span className="mute block">{p.blurb}</span>
               </button>
             ))}
-            {journeyDone && (
+            {journeyDone && demo && (
               <>
                 <div className="menu-title">Jump ahead in time (demo)</div>
                 <button role="menuitem" onClick={day3}>
                   Day 3: play the voice note
                 </button>
-                <button role="menuitem" onClick={() => { setMenu(false); useStore.getState().openMonth(); }}>
-                  Month end: review, podcast, check-in
+                <button role="menuitem" onClick={() => { setMenu(false); openMeeting(); }}>
+                  Month end: the meeting
                 </button>
               </>
             )}
@@ -124,9 +176,15 @@ export function TopBar() {
             <button role="menuitem" onClick={() => { setMenu(false); go("/"); leave(); }}>
               Switch household
             </button>
-            <button role="menuitem" onClick={() => { setMenu(false); go("/"); reset(); }}>
-              Forget my progress for this household
-            </button>
+            {sure ? (
+              <button role="menuitem" className="danger" autoFocus onClick={() => { toggleMenu(false); go("/"); reset(); }}>
+                Yes, forget it all: missions, notes and answers
+              </button>
+            ) : (
+              <button role="menuitem" className="danger-soft" onClick={() => setSure(true)}>
+                Forget my progress for this household…
+              </button>
+            )}
           </div>
         )}
       </div>

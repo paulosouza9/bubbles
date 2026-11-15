@@ -3,7 +3,7 @@
 import { create } from "zustand";
 import { projectedScore } from "../shared/score.js";
 import { api } from "./api.js";
-import { setServerVoice, stopSpeaking, voice } from "./audio.js";
+import { setServerVoice, sfx, stopSpeaking, voice } from "./audio.js";
 
 export const PROFILES = {
   novice: { label: "New to this", style: "plain", enter: 2, blurb: "Short sentences and everyday comparisons." },
@@ -13,7 +13,7 @@ export const PROFILES = {
 };
 
 const key = (family) => `burbuja:${family}`;
-const PERSIST = ["person", "profiles", "easy", "journeyDone", "missions", "understood", "notes", "asked", "day", "tutorialDone"];
+const PERSIST = ["person", "profiles", "easy", "journeyDone", "missions", "understood", "notes", "asked", "day", "tutorialDone", "hinted", "zoomHinted", "visited", "lastFocus", "explored", "guessed"];
 
 function load(family) {
   try {
@@ -29,6 +29,12 @@ const freshFamilyState = () => ({
   easy: false,
   journeyDone: false,
   tutorialDone: false,
+  hinted: false,
+  zoomHinted: false,
+  visited: {},
+  lastFocus: null,
+  explored: {}, // bubbles stepped into: they light up in the cloud
+  guessed: {}, // "guess before you see" answers
   missions: { month: 1, active: [], status: {}, history: [], when: {} },
   understood: {},
   notes: { intakeChanges: [], worries: [], humanRequests: 0 },
@@ -36,14 +42,46 @@ const freshFamilyState = () => ({
   day: 0,
 });
 
+// Moving between bubbles and pages goes into the browser history, so the back button (and a
+// phone's back gesture) returns to the bubble you were on instead of leaving the app.
+let restoring = false;
+function pushNav(entry) {
+  if (restoring || typeof history === "undefined") return;
+  const cur = history.state || {};
+  if (cur.b === entry.b && cur.v === entry.v) return;
+  history.pushState(entry, "", location.pathname);
+}
+function replaceNav(entry) {
+  if (typeof history !== "undefined") history.replaceState(entry, "", location.pathname);
+}
+export function restoreNav(entry) {
+  const s = useStore.getState();
+  if (!s.plan || !entry) return;
+  restoring = true;
+  try {
+    if (entry.b && (entry.b === "steps" || s.plan.bubbles.some((b) => b.id === entry.b))) {
+      if (s.phase === "month" || s.phase === "meeting") useStore.setState({ phase: "cloud" });
+      s.jump(entry.b);
+    } else if (entry.v === "home") s.goHome();
+    else if (entry.v === "month") s.openMonthPage();
+    else if (entry.v === "meeting") s.openMeeting();
+  } finally {
+    restoring = false;
+  }
+}
+
 export const useStore = create((set, get) => ({
+  trail: [], // the bubbles visited before this one, this session: "Back to …"
+  lit: null, // the bubble that has just lit up (a short pulse)
+  allLit: false, // every area explored: the whole-cloud celebration
   status: null,
   families: [],
   loadError: null,
   plan: null,
   family: null,
   via: null,
-  phase: "landing", // landing | forming | calibrate | journey | cloud | month
+  phase: "landing", // landing | forming | calibrate | journey | cloud | month | meeting
+  home: false, // the cloud of every bubble: where a returning visit starts
   level: 3,
   focus: null,
   journeyIndex: 0,
@@ -59,6 +97,11 @@ export const useStore = create((set, get) => ({
   toast: null,
   nudge: 0,
   tutorial: null, // null | "enter" | "back": the one-time zoom lesson
+  overview: false, // "All topics": every bubble, one zoom out from the guided path
+  overlayClose: null, // closes the reading overlay on Escape
+  setOverview(overview) {
+    set({ overview });
+  },
   setTutorial(tutorial) {
     set({ tutorial });
   },
@@ -90,6 +133,8 @@ export const useStore = create((set, get) => ({
     const saved = load(id) || {};
     const base = { ...freshFamilyState(), ...saved };
     if (!base.missions.active.length) base.missions = { ...base.missions, active: plan.firstMissions };
+    if (!base.missions.startedAt) base.missions = { ...base.missions, startedAt: new Date().toISOString().slice(0, 10) };
+    if (!base.missions.when) base.missions = { ...base.missions, when: {} };
     if (!base.person) base.person = plan.names[0];
     set({
       plan,
@@ -103,7 +148,12 @@ export const useStore = create((set, get) => ({
       journeyIndex: 0,
       chat: { open: false, messages: [], quote: null, pending: false },
       phase: base.journeyDone ? "cloud" : "forming",
+      // Once the walk-through is done, every visit opens on the cloud of bubbles.
+      home: Boolean(base.journeyDone),
+      overview: false,
+      trail: [],
     });
+    replaceNav(base.journeyDone ? { v: "home" } : { b: plan.order[0] });
     get().refreshStatus();
     get().log({ type: "open_plan", via });
   },
@@ -130,18 +180,72 @@ export const useStore = create((set, get) => ({
     set({ person });
   },
   setEasy(easy) {
-    set({ easy });
+    const s = get();
+    // The flat view has no "steps" bubble: land on its map instead of an empty screen.
+    if (easy && s.focus === "steps") set({ easy, focus: null, level: 3, overview: false });
+    // Back to the bubbles: there must always be one bubble in focus, or the screen stays empty.
+    else if (!easy && !s.simple && (!s.focus || s.level === 4)) set({ easy, level: 3, overview: false, focus: s.focus || (s.journeyDone ? "steps" : s.plan.order[0]) });
+    else if (!easy && s.level === 4) set({ easy, level: 3 });
+    else set({ easy, overview: false });
     get().log({ type: "easy_mode", on: easy });
   },
   setMuted(muted) {
     voice.muted = muted;
-    if (muted) stopSpeaking();
+    // Muting finishes the current line instead of cancelling it, so nothing waits forever.
+    if (muted) stopSpeaking("mute");
     set({ muted });
   },
 
   // ---- zoom ----
   setPhase(phase) {
     set({ phase });
+  },
+  // The three places of a returning visit: the cloud (your plan), this month, the meeting.
+  goHome() {
+    const s = get();
+    stopSpeaking();
+    if (s.flat()) return set({ phase: "cloud", home: true, focus: null, level: 3, overview: false, missionsOpen: false });
+    set({ phase: "cloud", home: true, level: 3, overview: false, missionsOpen: false, focus: s.focus && s.focus !== "steps" ? s.focus : s.plan.order[0] });
+    pushNav({ v: "home" });
+  },
+  // "Back to …": the bubble you were on before this one.
+  backToLast() {
+    const s = get();
+    const prev = s.trail.at(-1);
+    if (!prev) return;
+    if (typeof history !== "undefined" && history.state?.b) history.back();
+    else get().jump(prev);
+  },
+  // Zoom: All topics ‹ Outside ‹ Inside ‹ In detail. "In" goes one stop deeper, "out" one wider.
+  stepIn() {
+    const s = get();
+    set({ zoomHinted: true });
+    if (s.overview) return set({ overview: false });
+    if (s.home) return get().jump(s.focus);
+    if (s.level === 3) return get().enter(s.focus);
+    if (s.level === 2 && s.focus !== "steps") return get().setLevel(1);
+  },
+  stepOut() {
+    const s = get();
+    set({ zoomHinted: true });
+    if (s.level === 1) return get().setLevel(2);
+    if (s.level === 2) return get().setLevel(3);
+    if (s.level === 3 && !s.home && !s.overview) return s.journeyDone ? get().goHome() : set({ overview: true });
+  },
+  dismissZoomHint() {
+    set({ zoomHinted: true });
+  },
+  openMonthPage() {
+    stopSpeaking();
+    set({ phase: "month", home: false, overview: false, missionsOpen: false, journeyDone: true });
+    pushNav({ v: "month" });
+    get().log({ type: "open_month" });
+  },
+  openMeeting() {
+    stopSpeaking();
+    set({ phase: "meeting", home: false, overview: false, missionsOpen: false, journeyDone: true });
+    pushNav({ v: "meeting" });
+    get().log({ type: "open_meeting" });
   },
   // One bubble at a time. Each bubble is its own little world with three zoom stops:
   // 3 outside (one sentence), 2 inside (explained, with its toy), 1 deep (the figures).
@@ -151,8 +255,13 @@ export const useStore = create((set, get) => ({
   },
   seq() {
     const s = get();
-    const base = [...s.plan.order, ...s.plan.bubbles.map((b) => b.id).filter((id) => !s.plan.order.includes(id))];
-    return s.flat() ? base : [...base, "steps"];
+    // The walk-through visits every bubble, then ends on the plan of action.
+    return s.flat() ? s.allTopics() : [...s.allTopics(), "steps"];
+  },
+  // Every topic, in walk order.
+  allTopics() {
+    const s = get();
+    return [...s.plan.order, ...s.plan.bubbles.map((b) => b.id).filter((id) => !s.plan.order.includes(id))];
   },
   bubble(id) {
     const s = get();
@@ -161,7 +270,7 @@ export const useStore = create((set, get) => ({
       id: "steps",
       title: "Your next steps",
       status: "neutral",
-      building: `Three missions for month ${s.missions.month}, straight from your plan.`,
+      building: `${s.missions.active.length === 1 ? "Your mission" : `Your ${s.missions.active.length} missions`} for month ${s.missions.month}, straight from your plan.`,
       floor: { plain: "", standard: "" },
       mustKnow: [{ text: "Nothing is decided here. Every mission opens its decision card first.", source: "General" }],
       desks: [],
@@ -179,7 +288,23 @@ export const useStore = create((set, get) => ({
     const s = get();
     stopSpeaking();
     const last = id === "steps" || id === s.plan.order.at(-1);
-    set({ focus: id, level, fact: null, journeyDone: s.journeyDone || last, phase: s.phase === "journey" && last ? "cloud" : s.phase });
+    // The trail: where you came from. Going back pops it instead of growing it.
+    let trail = s.trail;
+    if (restoring) trail = trail.at(-1) === id ? trail.slice(0, -1) : trail;
+    else if (s.focus && s.focus !== id && !s.home && (s.phase === "cloud" || s.phase === "journey")) trail = [...trail, s.focus].slice(-20);
+    set({
+      focus: id,
+      level,
+      fact: null,
+      overview: false,
+      home: false,
+      trail,
+      visited: { ...s.visited, [id]: true },
+      lastFocus: id === "steps" ? s.lastFocus : id,
+      journeyDone: s.journeyDone || last,
+      phase: s.phase === "journey" && last ? "cloud" : s.phase,
+    });
+    pushNav({ b: id });
     get().logView();
   },
   setFact(fact) {
@@ -190,20 +315,38 @@ export const useStore = create((set, get) => ({
     set({ monthTab });
   },
   openMonth() {
-    const s = get();
-    if (s.flat()) return set({ phase: "month" });
-    set({ focus: "steps", level: 2, monthTab: "podcast", journeyDone: true, phase: "cloud" });
+    get().openMeeting();
   },
   enter(id) {
     const p = PROFILES[get().profile().kind];
     // In the bubble world, stepping inside always lands on the simple version first.
-    set({ focus: id, level: id === "steps" || !get().flat() ? 2 : p.enter, fact: null });
+    set({ focus: id, level: id === "steps" || !get().flat() ? 2 : p.enter, fact: null, home: false });
+    get().markExplored(id);
     get().logView();
+  },
+  // Stepping into a bubble lights it up. All of them lit: the whole cloud celebrates.
+  markExplored(id) {
+    const s = get();
+    if (!id || id === "steps" || s.explored[id]) return;
+    const explored = { ...s.explored, [id]: true };
+    const all = s.allTopics().every((t) => explored[t]);
+    set({ explored, lit: id, allLit: all });
+    sfx("ding");
+    get().log({ type: "explored", bubble: id, count: Object.keys(explored).length });
+    setTimeout(() => get().lit === id && set({ lit: null }), 1800);
+  },
+  setGuess(id, value) {
+    set((s) => ({ guessed: { ...s.guessed, [id]: value } }));
+    get().log({ type: "guess", bubble: id, value });
+  },
+  closeAllLit() {
+    set({ allLit: false });
   },
   // The wording each zoom stop uses. In the bubble world: inside = simple, deeper = detailed.
   styleNow() {
     const s = get();
-    if (!s.flat()) return s.level <= 1 ? "standard" : "plain";
+    // Bubble world and easy mode: the explanation is the simple one; the detail is a level down.
+    if (!s.flat() || s.easy) return s.level <= 1 ? "standard" : "plain";
     return s.profile().style;
   },
   setLevel(level) {
@@ -215,11 +358,17 @@ export const useStore = create((set, get) => ({
     }
     if (level <= 2 && !focus) focus = s.currentMission()?.bubbleId || s.plan.order[0];
     if (level >= 3) stopSpeaking();
-    set({ level, focus, fact: null });
+    set({ level, focus, fact: null, ...(level <= 2 ? { home: false } : {}) });
+    if (level <= 2) get().markExplored(focus);
     if (level <= 2) get().logView();
   },
   back() {
     const s = get();
+    if (s.phase === "meeting") return get().openMonthPage();
+    if (s.phase === "month") return get().goHome();
+    if (s.home) return;
+    // After the walk-through, stepping back out of a bubble lands on the cloud.
+    if (s.level === 3 && !s.flat() && s.journeyDone && s.phase === "cloud") return get().goHome();
     if (s.level === 1) get().setLevel(2);
     else if (s.level === 2 && (s.phase !== "journey" || !s.flat())) get().setLevel(3);
     else if (s.level === 3 && s.flat()) get().setLevel(4);
@@ -230,6 +379,8 @@ export const useStore = create((set, get) => ({
     const pr = s.profile();
     if (s.level === 1) return get().setLevel(2);
     if (!s.flat()) return s.level === 2 ? get().setLevel(3) : null;
+    // Easy mode always explains simply: "simpler" only steps back out, never rewrites the text.
+    if (s.easy) return s.level === 2 && s.phase !== "journey" ? get().setLevel(3) : s.level === 3 ? get().setLevel(4) : null;
     if (s.level === 2 && pr.style === "standard") {
       const count = (pr.simplerCount || 0) + 1;
       set({ profiles: { ...s.profiles, [s.person]: { ...pr, style: "plain", simplerCount: count, kind: count >= 2 && pr.kind !== "action" ? "novice" : pr.kind } } });
@@ -244,6 +395,7 @@ export const useStore = create((set, get) => ({
     if (s.level === 4) return get().setLevel(3);
     if (s.level === 3) return get().enter(s.focus);
     if (!s.flat()) return s.level === 2 && s.focus !== "steps" ? get().setLevel(1) : null;
+    if (s.easy) return s.level === 2 ? get().setLevel(1) : null;
     if (s.level === 2 && pr.style === "plain") {
       set({ profiles: { ...s.profiles, [s.person]: { ...pr, style: "standard" } } });
       return get().logView();
@@ -265,7 +417,8 @@ export const useStore = create((set, get) => ({
   startJourney() {
     const s = get();
     const first = s.plan.order[0];
-    set({ phase: "journey", journeyIndex: 0, focus: first, fact: null, level: s.flat() ? PROFILES[s.profile().kind].enter : 3 });
+    set({ phase: "journey", journeyIndex: 0, focus: first, fact: null, level: s.flat() ? PROFILES[s.profile().kind].enter : 3, visited: { ...s.visited, [first]: true }, lastFocus: first, trail: [] });
+    replaceNav({ b: first });
     get().logView();
   },
   journeyNext() {
@@ -300,7 +453,9 @@ export const useStore = create((set, get) => ({
   },
   currentMission() {
     const s = get();
-    return s.activeMissions().find((m) => s.missions.status[m.id] !== "done") || null;
+    // The step the person committed to comes first; then any started one; then the next open one.
+    const open = s.activeMissions().filter((m) => s.missions.status[m.id] !== "done");
+    return open.find((m) => s.missions.status[m.id] === "active" && s.missions.when?.[m.id]) || open.find((m) => s.missions.status[m.id] === "active") || open[0] || null;
   },
   doneMoveIds() {
     const s = get();
@@ -317,7 +472,7 @@ export const useStore = create((set, get) => ({
     const before = get().projected().score;
     set((s) => ({ missions: { ...s.missions, status: { ...s.missions.status, [id]: status } } }));
     get().log({ type: "mission_status", mission: id, status, ...extra });
-    if (status === "done" && !extra.undone) {
+    if (status === "done" && !extra.undone && !extra.quiet) {
       const m = get().mission(id);
       set({ celebrate: { title: m?.title, kind: m?.type === "understand" ? "understand" : "done", bubbleId: m?.bubbleId, from: before, to: get().projected().score } });
     }
@@ -340,7 +495,7 @@ export const useStore = create((set, get) => ({
   },
   setMissionsOpen(open) {
     const s = get();
-    if (open && !s.flat()) return set({ focus: "steps", level: 2, monthTab: "missions", journeyDone: true, phase: "cloud" });
+    if (open) return get().openMonthPage();
     set({ missionsOpen: open });
   },
   startNextMonth(ids) {
@@ -350,11 +505,13 @@ export const useStore = create((set, get) => ({
         active: ids,
         status: s.missions.status,
         history: [...s.missions.history, { month: s.missions.month, ids: s.missions.active, done: s.missions.active.filter((id) => s.missions.status[id] === "done") }],
+        when: {},
+        startedAt: new Date().toISOString().slice(0, 10),
       },
       day: 0,
-      phase: "cloud",
-      level: s.easy || s.simple ? 3 : 2,
-      focus: s.easy || s.simple ? null : "steps",
+      // The new month opens on its own page.
+      phase: "month",
+      home: false,
       monthTab: "missions",
     }));
     get().log({ type: "month_start", missions: ids });

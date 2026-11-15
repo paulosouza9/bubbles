@@ -1,0 +1,35 @@
+{
+ "hash": "6ff4f9765e74e75f",
+ "steps": {
+  "cashflow": {
+   "title": "Choose one change to retirement contributions",
+   "why": "Retirement contributions and your tight monthly cash flow both draw on the same income.",
+   "steps": [
+    "Check year-to-date 401(k) deferrals on your latest paystub",
+    "Call HR or plan rep to confirm remaining 401(k) deferral limit",
+    "Decide and set one change to your contribution this month"
+   ],
+   "minutes": 20
+  },
+  "cushion": {
+   "title": "Separate and decide the home cash slice",
+   "why": "Your January 2027 home and vacation needs push the cash target to $163,330 to $172,636.",
+   "steps": [
+    "Confirm the cash target: $163,330–$172,636 for home and vacation",
+    "Move the exact amount you’ll need for January 2027 into a separate account",
+    "Leave remaining cash and long-term investments apart from that labeled account"
+   ],
+   "minutes": 15
+  },
+  "debt": {
+   "title": "Keep paying the Amex down as planned",
+   "why": "Your Amex Platinum balance is $3,500 at 20% interest and is on track to clear by July 2028 if $200 monthly continues.",
+   "steps": [
+    "Confirm the current Amex balance is $3,500 and interest is 20%",
+    "Ensure your $200 monthly payment is scheduled this month",
+    "If your cash allows, increase this month’s payment by a small amount"
+   ],
+   "minutes": 10
+  }
+ }
+}

@@ -111,7 +111,7 @@ Rules:
 - If the answer is not in the plan, say "That isn't in your plan" and offer the closest thing that is.
 - Never give a new recommendation. Only explain the ones already in the plan.
 - If the person asks about a decision that is high-impact or hard to undo (buying insurance, changing retirement accounts, moving large sums, buying a home), or anything outside the plan, say a person should be part of that decision and add the action talk_to_human.
-- If the question touches a MUST KNOW, include it.
+- If the question touches a MUST KNOW, include it in plain words. Never write the words "MUST KNOW" or use capitals for emphasis.
 - At most 3 short sentences. Match the person's level: profile "novice" or "action" = everyday words and no jargon; "understand" = explain the why; "expert" = precise terms and figures. If easy_mode is true, use very short sentences.
 - English only. No exclamation marks, no emojis.
 
@@ -255,11 +255,23 @@ app.post(
     const { family, stage = "start", index = 0, answer = "", missions = [], person } = req.body || {};
     const plan = await buildPlan(family);
     const name = person || plan.names[0];
+    // What the person has ticked on screen arrives with every turn, so ticking during the chat counts.
+    const ticked = missions.filter((m) => m.status === "done");
+    const nextOpen = (from) => missions.findIndex((m, k) => k >= from && m.status !== "done");
+    const titles = (arr) => (arr.length === 1 ? `"${arr[0].title}"` : `${arr.slice(0, -1).map((m) => `"${m.title}"`).join(", ")} and "${arr.at(-1).title}"`);
+    const openLine = () =>
+      !missions.length
+        ? `How has the month gone, ${name}?`
+        : ticked.length === missions.length
+          ? `You ticked off every mission this month, ${name}. How did it feel?`
+          : ticked.length
+            ? `I can see you ticked off ${titles(ticked)}. How has the rest of the month gone, ${name}?`
+            : `How has the month gone, ${name}?`;
     const question = (st, i) =>
       st === "open"
-        ? `How has the month gone, ${name}?`
+        ? openLine()
         : st === "mission"
-          ? `One of your missions was: ${missions[i].title}. Were you able to do it?`
+          ? `You have not ticked "${missions[i].title}" yet. Did you get to it, or is something in the way?`
           : st === "life"
             ? "Has anything changed for you this month? Work, family, a big expense."
             : st === "worry"
@@ -277,12 +289,17 @@ app.post(
     const updates = {};
     const say = [r.ack];
     let next;
-    if (stage === "open") next = missions.length ? { stage: "mission", index: 0 } : { stage: "life", index: 0 };
+    const after = (from) => {
+      const j = nextOpen(from);
+      return j >= 0 ? { stage: "mission", index: j } : { stage: "life", index: 0 };
+    };
+    if (stage === "open") next = after(0);
     else if (stage === "mission") {
       const status = ["done", "in_progress", "not_done"].includes(r.status) ? r.status : "not_done";
-      updates.mission = { id: missions[index].id, status, blocker: r.blocker || null };
+      if (missions[index]) updates.mission = { id: missions[index].id, status, blocker: r.blocker || null };
+      if (status === "done") say.push("I have ticked it for you.");
       if (status === "not_done") say.push("That is fine. It carries over, with no penalty.");
-      next = index + 1 < missions.length ? { stage: "mission", index: index + 1 } : { stage: "life", index: 0 };
+      next = after(index + 1);
     } else if (stage === "life") {
       if (r.life_change) {
         updates.intakeChange = r.life_change;
