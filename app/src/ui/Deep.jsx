@@ -140,6 +140,7 @@ function ListenButton({ k }) {
 // ---- Navigation -----------------------------------------------------------------------
 
 function SeqNav() {
+  const nav = useRef();
   const path = useStore(useShallow((s) => s.seq()));
   const focus = useStore((s) => s.focus);
   const plan = useStore((s) => s.plan);
@@ -147,12 +148,15 @@ function SeqNav() {
   const lit = useStore((s) => s.lit);
   const { go, jump, bubble } = useStore.getState();
   const i = path.indexOf(focus);
+  useEffect(() => {
+    nav.current?.querySelector('[aria-current="step"]')?.scrollIntoView({ block: "nearest", inline: "center" });
+  }, [focus]);
   const roles = pathOf(plan);
   const short = (id) => (id === "steps" ? "Your plan of action" : bubble(id).title);
   return (
     <>
       {/* The path: where you are (named), where you have been (filled), what is left (hollow). */}
-      <nav className="seq glass" aria-label="Your path">
+      <nav ref={nav} className="seq glass" aria-label="Your path">
         {path.map((id, k) => {
           const b = bubble(id);
           const r = roles.indexOf(id);
@@ -886,7 +890,7 @@ function ZoomRail() {
             const on = here === st.id;
             return (
               <li key={st.id}>
-                <button className={on ? "on" : ""} disabled={off} aria-current={on ? "true" : undefined} onClick={() => goTo(st.id)} title={st.hint}>
+                <button className={on ? "on" : ""} disabled={off} aria-label={st.name} aria-current={on ? "true" : undefined} onClick={() => goTo(st.id)} title={st.hint}>
                   <span className="zr-name">{st.name}</span>
                   <i aria-hidden="true" />
                 </button>

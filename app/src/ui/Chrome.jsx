@@ -52,7 +52,7 @@ export function TopBar() {
   };
 
   return (
-    <header className="topbar">
+    <header className={`topbar ${journeyDone ? "with-sections" : ""}`}>
       <div className="top-left">
         <button
           className="brand"
@@ -156,7 +156,7 @@ export function TopBar() {
           </svg>
         </button>
         <button className="icon-btn" onClick={() => toggleMenu(!menu)} aria-label="Menu" aria-expanded={menu}>
-          ⋯
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.5" /><circle cx="12" cy="12" r="1.5" /><circle cx="19" cy="12" r="1.5" /></svg>
         </button>
         {menu && (
           <div className="glass menu" role="menu">

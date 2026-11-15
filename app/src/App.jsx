@@ -89,7 +89,7 @@ export default function App() {
   const flat = easy || simple;
   return (
     <div className={`app phase-${phase} ${easy ? "easy" : ""} ${flat ? "flat" : "deep"} ${chatOpen ? "chat-open" : ""}`}>
-      {flat ? (
+      {flat || phase === "landing" ? (
         <div className="flat-bg" aria-hidden="true" />
       ) : (
         <Suspense fallback={<div className="flat-bg" aria-hidden="true" />}>
