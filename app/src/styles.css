@@ -1742,13 +1742,12 @@ h3 {
 .chat.open .chat-sheet + .chat-bar {
   box-shadow: 0 8px 26px rgba(29, 43, 79, 0.12);
 }
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    transition-duration: 0.01ms !important;
-  }
+html.calm-motion *,
+html.calm-motion *::before,
+html.calm-motion *::after {
+  animation-duration: 0.22s !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.18s !important;
 }
 .easy *,
 .easy *::before,

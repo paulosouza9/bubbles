@@ -29,9 +29,12 @@ export default function App() {
 
   useEffect(() => {
     const s = useStore.getState();
-    const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
     s.setSimple(!hasWebGL());
-    s.setReduced(Boolean(reduced));
+    // Motion follows the system unless the person chose full or calm animations in the menu.
+    s.setMotion(s.motion);
+    const mq = window.matchMedia?.("(prefers-reduced-motion: reduce)");
+    const onMq = () => useStore.getState().setMotion(useStore.getState().motion);
+    mq?.addEventListener?.("change", onMq);
     const route = () => {
       const m = location.pathname.match(/^\/f\/([a-z0-9-]+)/);
       if (m && useStore.getState().family !== m[1]) useStore.getState().openFamily(m[1], "intake").catch(() => history.replaceState({}, "", "/"));

@@ -59,7 +59,8 @@ export async function chatJson({ system, user, messages, effort = "minimal", mod
   usage.textUsd += cost;
   usage.calls += 1;
   saveUsage();
-  const text = j.choices?.[0]?.message?.content || "";
+  // The app shows no emojis anywhere: strip any that slip into a reply.
+  const text = (j.choices?.[0]?.message?.content || "").replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{FE0F}\u{200D}]/gu, "");
   try {
     return JSON.parse(text);
   } catch {

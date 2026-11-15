@@ -783,7 +783,30 @@
 
 /* ---- Deeper: the detailed version, drawn straight on the bubble (no cards) --------------- */
 .inside.deeper {
-  --base: 0.7s; /* charts start once the particles have settled */
+  --base: 1.02s; /* the charts appear as the particles land on them */
+}
+/* The particles already did the moving: the charts simply fade in under them, together. */
+.inside.deeper .dchart,
+.inside.deeper .dchart .grow,
+.inside.deeper .dchart .flow,
+.inside.deeper .dchart .draw,
+.inside.deeper .dchart .fadein,
+.inside.deeper .dchart .pop,
+.inside.deeper .dchart .draw-y {
+  animation-name: fade;
+  animation-duration: 0.45s;
+  animation-timing-function: ease-out;
+  animation-delay: calc(var(--base) + var(--i, 0) * 0.04s);
+  animation-fill-mode: both;
+}
+.inside.deeper .d-text {
+  animation: fade 0.45s 1s both;
+}
+/* Measuring the final layout for the particles: no animation for that instant. */
+.inside.deeper.measuring,
+.inside.deeper.measuring * {
+  animation: none !important;
+  transition: none !important;
 }
 .detail-scroll {
   flex: 1;
@@ -2452,4 +2475,188 @@
   font-size: 0.82rem;
   font-weight: 650;
   padding: 0.2rem 0.6rem;
+}
+
+/* ---- The dive handle: down into the figures, up to the simple view ---------------------------- */
+.dive {
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: 0;
+  background: rgba(255, 255, 255, 0.78);
+  color: var(--blue);
+  font-size: 0.86rem;
+  font-weight: 650;
+  padding: 0.38rem 0.95rem;
+  border-radius: 999px;
+  box-shadow: 0 2px 10px rgba(29, 43, 79, 0.08);
+  margin: 0.15rem 0 0.35rem;
+  transition: background 0.2s, box-shadow 0.2s;
+  animation: fade 0.5s 0.8s both;
+}
+.dive:hover {
+  background: #fff;
+  box-shadow: 0 6px 18px rgba(29, 43, 79, 0.12);
+}
+.dive:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 3px;
+}
+.dive-chev {
+  width: 15px;
+  height: 15px;
+}
+.dive.in .dive-chev {
+  animation: dive-bob 2.4s ease-in-out infinite;
+}
+.dive.out {
+  margin-top: 0.4rem;
+}
+@keyframes dive-bob {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+  }
+  30% {
+    transform: translateY(3px);
+  }
+}
+html.calm-motion .dive.in .dive-chev {
+  animation: none;
+}
+
+/* ---- The first-bubble tour ---------------------------------------------------------------------- */
+.tour-ring {
+  position: fixed;
+  z-index: 60;
+  border-radius: 999px;
+  border: 2px solid var(--blue);
+  pointer-events: none;
+  animation: tour-pulse 1.8s ease-out infinite;
+  transition: left 0.3s, top 0.3s, width 0.3s, height 0.3s;
+}
+@keyframes tour-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(0, 113, 227, 0.35);
+  }
+  100% {
+    box-shadow: 0 0 0 14px rgba(0, 113, 227, 0);
+  }
+}
+.tour-card {
+  position: fixed;
+  z-index: 61;
+  background: #fff;
+  border-radius: 18px;
+  padding: 0.85rem 1rem 0.8rem;
+  box-shadow: 0 14px 40px rgba(29, 43, 79, 0.18);
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  animation: rise 0.35s both;
+  transition: left 0.3s, top 0.3s, bottom 0.3s;
+}
+.tour-card::after {
+  content: "";
+  position: absolute;
+  left: calc(var(--ax) - 7px);
+  width: 14px;
+  height: 14px;
+  background: #fff;
+  transform: rotate(45deg);
+  border-radius: 3px;
+}
+.tour-card.below::after {
+  top: -6px;
+}
+.tour-card.above::after {
+  bottom: -6px;
+}
+.tour-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.tour-k {
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--blue);
+}
+.tour-dots {
+  display: inline-flex;
+  gap: 4px;
+}
+.tour-dots i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #d1d1d6;
+}
+.tour-dots i.done {
+  background: var(--green);
+}
+.tour-dots i.now {
+  background: var(--blue);
+  width: 16px;
+  border-radius: 999px;
+}
+.tour-title {
+  font-size: 1rem;
+}
+.tour-text {
+  font-size: 0.9rem;
+  line-height: 1.4;
+  color: #3a3a3c;
+}
+.tour-ctl {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  margin-top: 0.3rem;
+}
+.tour-try {
+  font-size: 0.82rem;
+  font-weight: 650;
+  color: var(--grey);
+}
+html.calm-motion .tour-ring {
+  animation: none;
+}
+
+/* ---- Grouped cloud: one title per group, same words as the bubbles ------------------------ */
+.cloud-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  white-space: nowrap;
+  font-size: clamp(0.85rem, 1.7vmin, 1rem);
+  font-weight: 700;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.88);
+  border-radius: 999px;
+  padding: 0.3rem 0.8rem;
+  box-shadow: 0 2px 10px rgba(29, 43, 79, 0.08);
+  user-select: none;
+  animation: fade 0.5s 0.3s both;
+}
+.cloud-group i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+.cloud-group.g-red i {
+  background: var(--red);
+}
+.cloud-group.g-amber i {
+  background: var(--amber);
+}
+.cloud-group.g-green i {
+  background: var(--green);
+}
+.cloud-group span {
+  font-weight: 600;
+  color: var(--grey);
 }

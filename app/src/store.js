@@ -13,7 +13,7 @@ export const PROFILES = {
 };
 
 const key = (family) => `burbuja:${family}`;
-const PERSIST = ["person", "profiles", "easy", "journeyDone", "missions", "understood", "notes", "asked", "day", "tutorialDone", "hinted", "zoomHinted", "visited", "lastFocus", "explored", "guessed"];
+const PERSIST = ["person", "profiles", "easy", "journeyDone", "missions", "understood", "notes", "asked", "day", "tutorialDone", "hinted", "zoomHinted", "visited", "lastFocus", "explored", "guessed", "tourDone"];
 
 function load(family) {
   try {
@@ -31,6 +31,7 @@ const freshFamilyState = () => ({
   tutorialDone: false,
   hinted: false,
   zoomHinted: false,
+  tourDone: false, // the four-step "learn by doing" tour on the first bubble
   visited: {},
   lastFocus: null,
   explored: {}, // bubbles stepped into: they light up in the cloud
@@ -73,6 +74,14 @@ export function restoreNav(entry) {
 export const useStore = create((set, get) => ({
   trail: [], // the bubbles visited before this one, this session: "Back to …"
   lit: null, // the bubble that has just lit up (a short pulse)
+  tourStep: 0,
+  setTourStep(tourStep) {
+    set({ tourStep });
+  },
+  endTour() {
+    set({ tourDone: true, hinted: true, zoomHinted: true, tourStep: 0 });
+    get().log({ type: "tour_done" });
+  },
   allLit: false, // every area explored: the whole-cloud celebration
   status: null,
   families: [],
@@ -583,6 +592,23 @@ export const useStore = create((set, get) => ({
   },
   setReduced(reduced) {
     set({ reduced });
+    if (typeof document !== "undefined") document.documentElement.classList.toggle("calm-motion", reduced);
+  },
+  // "auto" follows the system setting; "full" and "calm" are the person's own choice.
+  motion: (() => {
+    try {
+      return localStorage.getItem("burbuja:motion") || "auto";
+    } catch {
+      return "auto";
+    }
+  })(),
+  setMotion(motion) {
+    try {
+      localStorage.setItem("burbuja:motion", motion);
+    } catch {}
+    const os = typeof matchMedia !== "undefined" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+    set({ motion });
+    get().setReduced(motion === "calm" || (motion === "auto" && os));
   },
 
   log(event) {

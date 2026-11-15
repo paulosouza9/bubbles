@@ -109,7 +109,7 @@ function Rig({ layout, cloud }) {
       p = [shift, 0, d];
       l = [shift, 0, 0];
     } else if (s.home && s.phase === "cloud" && cloud) {
-      const d = Math.max(cloud.halfH / (TAN * 0.64), cloud.halfW / (TAN * aspect * 0.84)) + 0.4;
+      const d = Math.max(cloud.halfH / (TAN * 0.7), cloud.halfW / (TAN * aspect * 0.8)) + 0.4;
       const lift = TAN * d * 0.02;
       p = [0, lift, d];
       l = [0, lift, 0];
@@ -515,6 +515,91 @@ function DecorBubble({ node, index }) {
 // ---- The cloud: every bubble at once, for a returning visit ---------------------------------
 // Size follows how much each area weighs in the plan; the month sits in the cloud as its own
 // bubble. Tap (or tab to) a bubble to fly into it.
+// The grouped cloud: anchors on top (your score, this month, what the plan assumes), then
+// one labelled group per state, using the same words the bubbles show. Easy to scan: you
+// find a topic by how it is doing, not by searching a spiral.
+const GROUPS = [
+  ["red", "Room to grow"],
+  ["amber", "Almost there"],
+  ["green", "In good shape"],
+];
+function groupedLayout(plan, portrait) {
+  const status = (id) => plan.bubbles.find((b) => b.id === id)?.status;
+  const topics = [...plan.order, ...plan.bubbles.map((b) => b.id).filter((id) => !plan.order.includes(id))].filter((id) => id !== "score");
+  const grouped = new Set();
+  const groups = GROUPS.map(([st, label]) => {
+    const ids = topics.filter((id) => status(id) === st);
+    ids.forEach((id) => grouped.add(id));
+    return { st, label, ids };
+  }).filter((g) => g.ids.length);
+  const reference = topics.filter((id) => !grouped.has(id));
+  const r = 1;
+  const dx = 2.25; // centre to centre inside a group
+  const dy = 2.2;
+  const perRow = portrait ? 2 : 3;
+  const nodes = [];
+  const headers = [];
+  // Top row: the anchors.
+  const top = [
+    { id: "score", r: 1.2 },
+    { id: "steps", r: 1.1 },
+    ...reference.map((id) => ({ id, r: 0.85 })),
+  ];
+  const topGap = 2.7;
+  top.forEach((n, i) => nodes.push({ ...n, x: (i - (top.length - 1) / 2) * topGap, y: 0, z: 0 }));
+  // Groups: side by side on a wide screen, stacked on a phone.
+  const blocks = groups.map((g) => {
+    const rows = Math.ceil(g.ids.length / perRow);
+    const cols = Math.min(perRow, g.ids.length);
+    return { ...g, rows, cols, w: (cols - 1) * dx, h: (rows - 1) * dy };
+  });
+  const firstY = -1.2 - 1.0 - 1.15; // under the anchors, leaving room for the group titles
+  if (!portrait) {
+    const gap = 0.9;
+    const total = blocks.reduce((a, b) => a + b.w, 0) + gap * (blocks.length - 1) + 2 * r * (blocks.length - 1);
+    let x = -total / 2;
+    for (const b of blocks) {
+      const cx = x + b.w / 2;
+      b.ids.forEach((id, k) => {
+        const row = Math.floor(k / b.cols);
+        const inRow = Math.min(b.cols, b.ids.length - row * b.cols);
+        const col = k % b.cols;
+        nodes.push({ id, r, x: cx + (col - (inRow - 1) / 2) * dx, y: firstY - row * dy, z: 0 });
+      });
+      headers.push({ st: b.st, label: b.label, n: b.ids.length, x: cx, y: firstY + r + 0.55 });
+      x += b.w + 2 * r + gap;
+    }
+  } else {
+    let y = firstY;
+    for (const b of blocks) {
+      headers.push({ st: b.st, label: b.label, n: b.ids.length, x: 0, y: y + r + 0.55 });
+      b.ids.forEach((id, k) => {
+        const row = Math.floor(k / b.cols);
+        const inRow = Math.min(b.cols, b.ids.length - row * b.cols);
+        const col = k % b.cols;
+        nodes.push({ id, r, x: (col - (inRow - 1) / 2) * dx, y: y - row * dy, z: 0 });
+      });
+      y -= b.h + dy + 1.1;
+    }
+  }
+  // Centre everything and measure it, for the camera.
+  const minX = Math.min(...nodes.map((n) => n.x - n.r));
+  const maxX = Math.max(...nodes.map((n) => n.x + n.r));
+  const minY = Math.min(...nodes.map((n) => n.y - n.r));
+  const maxY = Math.max(...nodes.map((n) => n.y + n.r), ...headers.map((h) => h.y + 0.3));
+  const cx = (minX + maxX) / 2;
+  const cy = (minY + maxY) / 2;
+  nodes.forEach((n) => {
+    n.x -= cx;
+    n.y -= cy;
+  });
+  headers.forEach((h) => {
+    h.x -= cx;
+    h.y -= cy;
+  });
+  return { nodes, headers, halfW: (maxX - minX) / 2, halfH: (maxY - minY) / 2 };
+}
+
 const WEIGHT = { red: 0.62, amber: 0.5, green: 0.46, neutral: 0.34 };
 function cloudNodes(plan) {
   return [
@@ -644,7 +729,23 @@ function CloudBubble({ node, index, plan, missions, labels }) {
 function Cloud({ cloud, labels }) {
   const plan = useStore((s) => s.plan);
   const missions = useStore((s) => s.missions);
-  return cloud.nodes.map((n, i) => <CloudBubble key={n.id} node={n} index={i} plan={plan} missions={missions} labels={labels} />);
+  return (
+    <>
+      {cloud.nodes.map((n, i) => (
+        <CloudBubble key={n.id} node={n} index={i} plan={plan} missions={missions} labels={labels} />
+      ))}
+      {labels &&
+        cloud.headers.map((h) => (
+          <Html key={h.st} center position={[h.x, h.y, 0]} zIndexRange={[8, 0]}>
+            <div className={`cloud-group g-${h.st}`}>
+              <i aria-hidden="true" />
+              {h.label}
+              <span>{h.n}</span>
+            </div>
+          </Html>
+        ))}
+    </>
+  );
 }
 
 function Scene() {
@@ -654,7 +755,7 @@ function Scene() {
   const layout = useMemo(() => computeLayout(DECOR, size.width / size.height < 0.85), [size.width < size.height * 0.85]);
   const ids = useMemo(() => (plan ? [...plan.bubbles.map((b) => b.id), "steps"] : []), [plan]);
   const portrait = size.width / size.height < 0.85;
-  const cloud = useMemo(() => (plan ? computeLayout(cloudNodes(plan), portrait) : null), [plan, portrait]);
+  const cloud = useMemo(() => (plan ? groupedLayout(plan, portrait) : null), [plan, portrait]);
   const showCloud = useStore((s) => s.home && s.phase === "cloud" && !s.easy && !s.simple);
   const [labelReady, setLabelReady] = useState(false);
   useEffect(() => {

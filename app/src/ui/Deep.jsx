@@ -9,6 +9,7 @@ import { useShallow } from "zustand/react/shallow";
 import { sfx, speak, stopSpeaking } from "../audio.js";
 import { STATUS_COLOR, STATUS_WORD, sentences, usdShort } from "../format.js";
 import { hopeFor } from "../hope.js";
+import { refreshDetailCache } from "../detailSample.js";
 import { guessFor, guessVerdict } from "../guess.js";
 import MiniApp from "../miniapps/index.jsx";
 import { pathOf, ROLE } from "../path.js";
@@ -421,7 +422,10 @@ function Outside({ b }) {
   const g = guessFor(b);
   const guessed = useStore((s) => s.guessed[b.id]);
   const [reveal, setReveal] = useState(null);
-  const pending = Boolean(g) && guessed === undefined;
+  // Never on the first bubble of the walk-through: that one is for learning how it all works.
+  const touring = useStore((s) => s.phase === "journey" && !s.tourDone);
+  const first = plan.order[0] === b.id;
+  const pending = Boolean(g) && guessed === undefined && !touring && !first;
   useEffect(() => {
     const t = setTimeout(() => {
       if (pending) return speak(`Before you step in, a guess. ${g.q}`);
@@ -442,7 +446,7 @@ function Outside({ b }) {
   };
   return (
     <div className="outside" key={b.id}>
-      {!hinted && (
+      {!hinted && useStore.getState().tourDone && (
         <div className="out-hint" aria-hidden="true">
           Tap the bubble to step inside
         </div>
@@ -594,23 +598,12 @@ function Inside({ b }) {
       ) : (
         <div className="toy-space" ref={band} aria-hidden="true" />
       )}
+      <DiveHandle dir="in" />
       <div className="in-bottom">
         <ActionMoment b={b} ready={ready} />
         <MustLine items={b.mustKnow} />
         <div className="in-ctl">
           <ListenButton k={k} />
-          <button className="btn zbtn" onClick={() => useStore.getState().stepOut()}>
-            <ZoomIcon dir="out" /> Step out
-          </button>
-          <button
-            className="btn zbtn"
-            onClick={() => {
-              sfx("whoosh");
-              useStore.getState().stepIn();
-            }}
-          >
-            <ZoomIcon dir="in" /> Step in for the detail
-          </button>
           <NextButton primary={false} />
         </div>
       </div>
@@ -629,6 +622,24 @@ function Deeper({ b }) {
   useEffect(() => {
     if (chatOpen) k.stop();
   }, [chatOpen]);
+  // Keep a note of where every chart is drawn, so stepping back out starts from exactly that.
+  useEffect(() => {
+    const sc = document.querySelector(".inside.deeper .detail-scroll");
+    let raf = 0;
+    const on = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(refreshDetailCache);
+    };
+    const t = setTimeout(refreshDetailCache, 1800);
+    sc?.addEventListener("scroll", on, { passive: true });
+    window.addEventListener("resize", on);
+    return () => {
+      clearTimeout(t);
+      cancelAnimationFrame(raf);
+      sc?.removeEventListener("scroll", on);
+      window.removeEventListener("resize", on);
+    };
+  }, [b.id]);
   return (
     <div className="inside deeper">
       <header className="in-head">
@@ -637,6 +648,7 @@ function Deeper({ b }) {
         </h1>
         <span className="mute small">In detail</span>
       </header>
+      <DiveHandle dir="out" />
       <div className="detail-scroll" tabIndex={0} aria-label={`${b.title}, in detail`}>
         <p className="d-text" data-ask>
           {k.all.map((p, i) => (
@@ -653,15 +665,6 @@ function Deeper({ b }) {
         <MustLine items={b.mustKnow} />
         <div className="in-ctl">
           <ListenButton k={k} />
-          <button
-            className="btn"
-            onClick={() => {
-              sfx("whoosh");
-              useStore.getState().stepOut();
-            }}
-          >
-            <ZoomIcon dir="out" /> Step out
-          </button>
           {b.analysis.length > 0 && (
             <button className="btn" onClick={() => setOpen(true)}>
               What Sherpas' analysis says
@@ -734,6 +737,110 @@ export function ZoomIcon({ dir }) {
   );
 }
 
+// ---- The first-bubble tour: learn the controls by using them ---------------------------------
+// Four steps, each waiting for the real action (step in, open the figures, come back, move on).
+// Nothing is dimmed or blocked, and it can be skipped at any point.
+const TOUR = [
+  { target: ".out-cta .btn.primary", title: "Look inside", text: "Tap the bubble, or “Step inside”, to see what it holds." },
+  { target: ".dive.in", title: "Every figure", text: "Want the exact numbers? Tap “See every figure”." },
+  { target: ".dive.out", title: "Back up", text: "Come back to the simple view whenever you like. The zoom on the right does the same." },
+  { target: ".nav-arrow.next", title: "Next bubble", text: "When you are ready, move on to the next bubble." },
+];
+function Tour() {
+  const step = useStore((s) => s.tourStep);
+  const level = useStore((s) => s.level);
+  const focus = useStore((s) => s.focus);
+  const { setTourStep, endTour } = useStore.getState();
+  const [rect, setRect] = useState(null);
+  const start = useRef(focus);
+  // Each step completes when the person does the thing it shows.
+  useEffect(() => {
+    if (step === 0 && level === 2) setTourStep(1);
+    else if (step === 1 && level === 1) setTourStep(2);
+    else if (step === 2 && level >= 2) setTourStep(3);
+  }, [level, step]);
+  useEffect(() => {
+    if (step === 3 && focus !== start.current) endTour();
+  }, [focus, step]);
+  // Follow the target on screen (it can move as the bubble settles).
+  useEffect(() => {
+    let alive = true;
+    const find = () => {
+      if (!alive) return;
+      const el = document.querySelector(TOUR[step].target);
+      const r = el?.getBoundingClientRect();
+      setRect(r && r.width ? { x: r.left, y: r.top, w: r.width, h: r.height } : null);
+      setTimeout(find, 250);
+    };
+    find();
+    return () => {
+      alive = false;
+    };
+  }, [step]);
+  if (!rect) return null;
+  const t = TOUR[step];
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const cardW = Math.min(300, vw - 24);
+  const above = rect.y > vh * 0.55;
+  const left = Math.max(12, Math.min(vw - cardW - 12, rect.x + rect.w / 2 - cardW / 2));
+  const arrowX = Math.max(18, Math.min(cardW - 18, rect.x + rect.w / 2 - left));
+  const style = above ? { left, width: cardW, bottom: vh - rect.y + 14 } : { left, width: cardW, top: rect.y + rect.h + 14 };
+  return (
+    <>
+      <div className="tour-ring" aria-hidden="true" style={{ left: rect.x - 6, top: rect.y - 6, width: rect.w + 12, height: rect.h + 12 }} />
+      <div className={`tour-card ${above ? "above" : "below"}`} style={{ ...style, "--ax": `${arrowX}px` }} role="dialog" aria-label={`Quick tour, step ${step + 1} of ${TOUR.length}`}>
+        <div className="tour-top">
+          <span className="tour-k">
+            {step + 1} of {TOUR.length}
+          </span>
+          <span className="tour-dots" aria-hidden="true">
+            {TOUR.map((_, i) => (
+              <i key={i} className={i < step ? "done" : i === step ? "now" : ""} />
+            ))}
+          </span>
+        </div>
+        <b className="tour-title">{t.title}</b>
+        <p className="tour-text">{t.text}</p>
+        <div className="tour-ctl">
+          {step === TOUR.length - 1 ? (
+            <button className="btn primary" onClick={endTour}>
+              Got it
+            </button>
+          ) : (
+            <span className="tour-try">Try it now</span>
+          )}
+          <button className="link" onClick={endTour}>
+            Skip the tour
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
+
+// The dive handle: under the toy it invites you down into every figure; at the top of the
+// detail it brings you back up. The rail on the right does the same; this is the inviting way.
+function DiveHandle({ dir }) {
+  const go = () => {
+    sfx("whoosh");
+    const s = useStore.getState();
+    dir === "in" ? s.stepIn() : s.stepOut();
+  };
+  const chevron = (
+    <svg className="dive-chev" viewBox="0 0 16 16" aria-hidden="true">
+      <path d={dir === "in" ? "M3.5 6l4.5 4.5L12.5 6" : "M3.5 10l4.5-4.5 4.5 4.5"} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+  return (
+    <button className={`dive ${dir}`} onClick={go} aria-label={dir === "in" ? "Step in: see every figure, in detail" : "Step out: back to the simple view"}>
+      {dir === "out" && chevron}
+      <span>{dir === "in" ? "See every figure" : "Back to the simple view"}</span>
+      {dir === "in" && chevron}
+    </button>
+  );
+}
+
 // The zoom, made visible: a ladder on the right edge, deepest at the top like a map's zoom.
 // Every stop is named, the current one is marked, and "Step in" / "Step out" say what they do.
 const STOPS = [
@@ -765,7 +872,7 @@ function ZoomRail() {
     if (id === 1) setLevel(1);
   };
   // The hint shows once, after the first "tap the bubble" hint has been seen.
-  const showHint = !zoomHinted && hinted;
+  const showHint = !zoomHinted && hinted && useStore.getState().tourDone;
   return (
     <>
       <nav className="zoom-rail glass" aria-label="Zoom">
@@ -806,6 +913,8 @@ function ZoomRail() {
 
 export function Stage() {
   const flat = useStore((s) => s.easy || s.simple);
+  const phase = useStore((s) => s.phase);
+  const tourDone = useStore((s) => s.tourDone);
   const level = useStore((s) => s.level);
   const focus = useStore((s) => s.focus);
   const overview = useStore((s) => s.overview);
@@ -822,6 +931,7 @@ export function Stage() {
       {level === 2 && (b.id === "steps" ? <StepsInside /> : <Inside b={b} key={`i-${b.id}`} />)}
       {level === 1 && <Deeper b={b} key={`d-${b.id}`} />}
       <ZoomRail />
+      {phase === "journey" && !tourDone && <Tour />}
       {b.id !== "steps" && level >= 3 && <MissionChip />}
       {overview && <Overview />}
     </main>

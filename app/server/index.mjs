@@ -231,7 +231,7 @@ You get the question that was asked and the person's answer. Return JSON:
  "life_change": short phrase describing a real change in work, family or big expenses, or null,
  "worry": short phrase or null,
  "needs_human": true if they mention a big or hard-to-undo decision, distress, or something outside a plan; otherwise false}
-English only. No exclamation marks.`;
+English only. No exclamation marks, no emojis.`;
 
 function heuristic(answer, stage) {
   const a = String(answer).toLowerCase();

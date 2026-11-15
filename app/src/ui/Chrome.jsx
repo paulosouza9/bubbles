@@ -17,6 +17,7 @@ export function TopBar() {
   const kind = useStore((s) => s.profile().kind);
   const journeyDone = useStore((s) => s.journeyDone);
   const home = useStore((s) => s.home);
+  const motion = useStore((s) => s.motion);
   const { goHome, openMonthPage, openMeeting } = useStore.getState();
   const inMonth = phase === "month" || phase === "meeting";
   const { setLevel, back, setEasy, setMuted, setPerson, setProfile, setPhase, leave, reset, setDay, showToast, startJourney } = useStore.getState();
@@ -144,7 +145,15 @@ export function TopBar() {
           Easy mode
         </button>
         <button className="icon-btn" onClick={() => setMuted(!muted)} aria-label={muted ? "Turn the voice on" : "Turn the voice off"} title={muted ? "Voice is off" : "Voice is on"}>
-          {muted ? "🔇" : "🔊"}
+          {/* Drawn icons, not emoji: the same line style as the rest of the app. */}
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+            <path d="M4 10v4h4l5 4V6L8 10H4z" fill="currentColor" />
+            {muted ? (
+              <path d="M16.5 9.5l5 5M21.5 9.5l-5 5" stroke="currentColor" strokeWidth="1.8" fill="none" strokeLinecap="round" />
+            ) : (
+              <path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" stroke="currentColor" strokeWidth="1.8" fill="none" strokeLinecap="round" />
+            )}
+          </svg>
         </button>
         <button className="icon-btn" onClick={() => toggleMenu(!menu)} aria-label="Menu" aria-expanded={menu}>
           ⋯
@@ -169,6 +178,17 @@ export function TopBar() {
                 </button>
               </>
             )}
+            <div className="menu-title">Animations</div>
+            {[
+              ["full", "Full", "Bubbles, particles and smooth zooms."],
+              ["calm", "Calm", "Short fades, nothing flying around."],
+              ["auto", "Follow my device", "Uses your system's motion setting."],
+            ].map(([k, label, blurb]) => (
+              <button key={k} role="menuitemradio" aria-checked={motion === k} className={motion === k ? "on" : ""} onClick={() => useStore.getState().setMotion(k)}>
+                <b>{label}</b>
+                <span className="mute block">{blurb}</span>
+              </button>
+            ))}
             <div className="menu-title">Plan</div>
             <button role="menuitem" onClick={() => { setMenu(false); startJourney(); }}>
               Replay the walk-through
