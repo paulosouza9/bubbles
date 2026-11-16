@@ -1,5 +1,5 @@
-// Getting in: the dashboard (the four plans in front of one big glass bubble, and a glass
-// plus to add documents), the bubbles forming, and the short calibration that sets the
+// Getting in: the dashboard (the four plans, each with a bubble that rises when you point at
+// it, and a glass bubble with a plus to add documents), the bubbles forming, and the short calibration that sets the
 // starting level and teaches the zoom once.
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { api } from "../api.js";
@@ -31,23 +31,22 @@ function ScoreRing({ score, color }) {
   );
 }
 
-function PlanCard({ f, onOpen, onHot, disabled }) {
+function PlanCard({ f, onOpen, onPoint, onFocusPlan, disabled }) {
   const band = bandOf(f);
   const initials = f.label
     .split(" & ")
     .map((n) => n[0])
     .join("");
-  const hot = () => onHot(f.id);
-  const cold = () => onHot(null);
   return (
     <li>
       <button
         className="glass plan-card"
+        data-plan={f.id}
         onClick={onOpen}
-        onPointerEnter={hot}
-        onPointerLeave={cold}
-        onFocus={hot}
-        onBlur={cold}
+        onPointerEnter={() => onPoint(f.id)}
+        onPointerLeave={() => onPoint((id) => (id === f.id ? null : id))}
+        onFocus={() => onFocusPlan(f.id)}
+        onBlur={() => onFocusPlan((id) => (id === f.id ? null : id))}
         disabled={disabled}
         aria-label={`Open ${f.label} ${f.lastName}'s plan. Health score ${f.score} out of 100, ${band.label}.`}
         style={{ "--band": band.color }}
@@ -104,13 +103,15 @@ export function Landing() {
   const reduced = useStore((s) => s.reduced);
   const [drag, setDrag] = useState(false);
   const [hover, setHover] = useState(false);
-  const [hot, setHot] = useState(null);
+  // The plan under the pointer wins; otherwise the one with keyboard focus.
+  const [pointed, setPointed] = useState(null);
+  const [focused, setFocused] = useState(null);
+  const hot = pointed || focused;
   const [busy, setBusy] = useState("");
   const [miss, setMiss] = useState(false);
   const [openError, setOpenError] = useState("");
   const input = useRef();
   const grid = useRef();
-  const bubbleSpot = useRef();
   const plusSpot = useRef();
   const plusState = useRef({ hover: false, over: false, busy: false });
   plusState.current = { hover, over: drag, busy: Boolean(busy) };
@@ -148,20 +149,17 @@ export function Landing() {
     <main className={`landing dash ${simple ? "is-flat" : ""}`}>
       {!simple && (
         <Suspense fallback={null}>
-          <DashWorld bubbleAnchor={grid} bubbleSpot={bubbleSpot} plusAnchor={plusSpot} plusState={plusState} orbs={orbs} hot={hot} reduced={reduced} />
+          <DashWorld bubbleAnchor={grid} plusAnchor={plusSpot} plusState={plusState} orbs={orbs} hot={hot} reduced={reduced} />
         </Suspense>
       )}
       <header className="brand-row">
         <span className="brand">FINANCIAL COACH</span>
-        <span className="brand-note">Your Sherpas plan, explained at your level</span>
       </header>
 
       <section className="dash-head">
         <h1>Choose a plan to explore.</h1>
-        <p className="lede">A voice walks you through it, one bubble at a time. Step inside for detail, or step back out for the simple version.</p>
+        <p className="lede">A voice walks you through your plan, one bubble at a time.</p>
       </section>
-
-      {!simple && <div className="bubble-spot" ref={bubbleSpot} aria-hidden="true" />}
 
       <section className="plans" aria-label="Plans ready to open" aria-busy={Boolean(busy)}>
         {loadError && (
@@ -180,7 +178,7 @@ export function Landing() {
         <ul className="plan-grid" ref={grid}>
           {!families.length && !loadError
             ? [0, 1, 2, 3].map((i) => <li key={i} className="glass plan-card skeleton" aria-hidden="true" />)
-            : families.map((f) => <PlanCard key={f.id} f={f} onOpen={() => open(f.id, "intake")} onHot={setHot} disabled={Boolean(busy)} />)}
+            : families.map((f) => <PlanCard key={f.id} f={f} onOpen={() => open(f.id, "intake")} onPoint={setPointed} onFocusPlan={setFocused} disabled={Boolean(busy)} />)}
         </ul>
       </section>
 
@@ -213,7 +211,7 @@ export function Landing() {
           <span className="add-copy">
             <b>{drag ? "Drop to add your files" : "Add your documents"}</b>
             <span id="add-help" className="mute small">
-              Drop statements or a plan report here, or click to choose. We match them to the plan Sherpas prepared for you.
+              Drop statements or a plan report, or click to choose.
             </span>
           </span>
         </button>
@@ -232,8 +230,8 @@ export function Landing() {
         </div>
       </section>
 
-      <footer className="landing-foot mute small">
-        <span className="block">These are fictional households built for the Sherpas hackathon. This app explains an existing plan. It does not give new financial advice.</span>
+      <footer className="landing-foot">
+        Fictional households for the Sherpas hackathon. Explains an existing plan, not new financial advice.
       </footer>
     </main>
   );
