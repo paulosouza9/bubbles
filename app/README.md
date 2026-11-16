@@ -1,4 +1,4 @@
-# Burbuja (app)
+# Financial Coach (app)
 
 A Sherpas plan explained at your level: glass bubbles in 3D, a voice, mini apps, a chat that knows what is on screen, monthly missions, a podcast-style review and a month-end check-in. The idea is in [`../docs/IDEA.md`](../docs/IDEA.md).
 

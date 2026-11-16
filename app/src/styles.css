@@ -1,4 +1,4 @@
-/* Burbuja. White, airy, Apple-like. Glass outside, colour inside. */
+/* Financial Coach. White, airy, Apple-like. Glass outside, colour inside. */
 :root {
   --ink: #1d1d1f;
   --grey: #6e6e73;
@@ -391,39 +391,12 @@ h3 {
   align-items: baseline;
   gap: 0.8rem;
 }
-.hero {
-  margin-top: clamp(1.5rem, 7vh, 5rem);
-}
-.hero h1 {
-  font-size: clamp(2.4rem, 6.2vw, 4.6rem);
-  font-weight: 700;
-  letter-spacing: -0.045em;
-  line-height: 1.02;
-  max-width: 13ch;
-}
 .lede {
   font-size: clamp(1.05rem, 1.6vw, 1.3rem);
   color: var(--grey);
   max-width: 46ch;
   margin-top: 1rem;
   line-height: 1.4;
-}
-.entries {
-  display: grid;
-  grid-template-columns: 1.05fr 1fr;
-  gap: 1.1rem;
-  margin-top: clamp(1.4rem, 5vh, 2.6rem);
-  max-width: 1060px;
-}
-.entries .glass {
-  padding: 1.4rem 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-  align-items: flex-start;
-}
-.drop.over {
-  outline: 3px solid var(--blue);
 }
 .busy {
   font-size: 0.88rem;
@@ -436,25 +409,6 @@ h3 {
   background: #fff1f0;
   border-radius: 12px;
   padding: 0.5rem 0.7rem;
-}
-.family-list {
-  width: 100%;
-}
-.family-list button {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-  padding: 0.7rem 0.9rem;
-  border-radius: 16px;
-  border: 1px solid #ececf0;
-  background: rgba(255, 255, 255, 0.85);
-  margin-top: 0.45rem;
-  text-align: left;
-  transition: transform 0.15s;
-}
-.family-list button:hover {
-  transform: translateX(3px);
 }
 .arrow {
   color: var(--blue);
@@ -1757,9 +1711,6 @@ html.calm-motion *::after {
 
 /* ---- Small screens --------------------------------------------------------------- */
 @media (max-width: 860px) {
-  .entries {
-    grid-template-columns: 1fr;
-  }
   .el-text {
     display: none;
   }
@@ -1814,66 +1765,343 @@ html.calm-motion *::after {
   animation: fade 0.6s 2.4s both;
 }
 
-
-/* Keep the added 3D preview within the original landing page. */
+/* ---- Dashboard: four plans in front of one glass bubble, a glass plus below ------ */
+/* Flat colour only. The depth comes from the 3D glass behind the page and the frosted
+   panes in front of it, never from painted gradients. */
 .phase-landing > .flat-bg {
   background: #fff;
 }
-.landing .hero {
-  display: grid;
-  grid-template-columns: 1.05fr 1fr;
-  align-items: center;
-  gap: 2rem;
-  max-width: 1060px;
+.brand {
+  font-size: 0.92rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
 }
-.hero-copy {
-  min-width: 0;
+.dash-world {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
 }
-.plan-preview,
-.plan-preview-loading {
-  min-width: 0;
-  height: 330px;
-}
-.plan-preview {
+.landing.dash {
   display: flex;
   flex-direction: column;
-}
-.preview-canvas {
-  flex: 1;
-  min-height: 0;
-  touch-action: pan-y;
-  cursor: grab;
-}
-.preview-canvas:active {
-  cursor: grabbing;
-}
-.plan-preview figcaption {
-  display: flex;
   align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 0.5rem;
+  padding-bottom: 2.4rem;
+}
+.dash > :not(.dash-world) {
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
+}
+.dash ::selection {
+  background: rgba(0, 113, 227, 0.16);
+  color: var(--ink);
+}
+.dash .brand-row {
+  width: 100%;
+  max-width: 1180px;
+  justify-content: space-between;
+  align-items: center;
+}
+.brand-note {
+  font-size: 0.82rem;
   color: var(--grey);
-  font-size: 0.8rem;
 }
-.preview-controls {
+.dash-head {
+  text-align: center;
+  margin-top: clamp(2.5rem, 9vh, 6rem);
+  max-width: 760px;
+}
+.dash-head h1 {
+  font-size: clamp(2.1rem, 4.6vw, 3.4rem);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 1.04;
+  text-wrap: balance;
+}
+.dash-head .lede {
+  margin: 0.9rem auto 0;
+  text-wrap: pretty;
+}
+.plans {
+  width: 100%;
+  max-width: 1180px;
+  margin-top: clamp(2.2rem, 7vh, 4rem);
   display: flex;
-  gap: 0.35rem;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.8rem;
 }
-.plan-preview-loading {
+.plan-grid {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1.1rem;
+}
+.plan-grid > li {
+  display: flex;
+}
+
+/* A frosted pane. Over the bubble it bends and softens the glass behind it. */
+.plan-card {
+  width: 100%;
+  min-height: 228px;
+  padding: 1.15rem 1.2rem 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.3rem;
+  text-align: left;
+  border-radius: 26px;
+  background: rgba(255, 255, 255, 0.5);
+  -webkit-backdrop-filter: blur(22px) saturate(190%);
+  backdrop-filter: blur(22px) saturate(190%);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow:
+    0 0 0 1px rgba(29, 43, 79, 0.06),
+    0 14px 36px rgba(29, 43, 79, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 1);
+  transition:
+    transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+    background 0.35s;
+}
+.plan-card:hover:not(:disabled),
+.plan-card:focus-visible {
+  transform: translateY(-4px);
+  background: rgba(255, 255, 255, 0.62);
+  box-shadow:
+    0 0 0 1px rgba(29, 43, 79, 0.07),
+    0 24px 48px rgba(29, 43, 79, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 1);
+}
+.plan-card:active:not(:disabled) {
+  transform: translateY(-1px) scale(0.99);
+}
+.plan-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.55rem;
+}
+.plan-avatar {
+  width: 2.8rem;
+  height: 2.8rem;
+  border-radius: 50%;
   display: grid;
   place-items: center;
-  color: var(--grey);
-  font-size: 0.85rem;
+  font-weight: 650;
+  font-size: 0.92rem;
+  letter-spacing: 0.02em;
+  background: color-mix(in srgb, var(--band) 14%, #fff);
+  color: color-mix(in srgb, var(--band) 55%, #000);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--band) 22%, transparent);
 }
-@media (max-width: 860px) {
-  .landing .hero {
-    grid-template-columns: 1fr;
-    gap: 1rem;
+.score-ring {
+  width: 3.5rem;
+  height: 3.5rem;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.plan-name {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+  font-size: 1.16rem;
+  letter-spacing: -0.02em;
+}
+.plan-name b {
+  font-weight: 650;
+}
+.plan-name span {
+  color: var(--grey);
+  font-weight: 500;
+}
+.plan-meta {
+  font-size: 0.82rem;
+  color: var(--grey);
+  margin-top: 0.15rem;
+}
+.plan-foot {
+  margin-top: auto;
+  padding-top: 0.8rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  border-top: 1px solid rgba(29, 43, 79, 0.08);
+}
+.band-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+.band-pill .dot {
+  background: var(--band);
+}
+.plan-card .arrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+.plan-card .arrow svg {
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.plan-card:hover .arrow svg,
+.plan-card:focus-visible .arrow svg {
+  transform: translateX(3px);
+}
+.plan-card.skeleton {
+  animation: pane-wait 1.4s ease-in-out infinite alternate;
+}
+@keyframes pane-wait {
+  from {
+    opacity: 0.5;
   }
-  .plan-preview,
-  .plan-preview-loading {
-    height: 260px;
+  to {
+    opacity: 1;
+  }
+}
+
+/* The add target: no panel of its own, the glass plus behind it is the object. */
+.add {
+  width: 100%;
+  max-width: 1180px;
+  margin-top: clamp(1.6rem, 5vh, 2.6rem);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.7rem;
+}
+.add-drop {
+  width: min(640px, 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.4rem 1.2rem 1.3rem;
+  border: 0;
+  border-radius: 32px;
+  background: transparent;
+  box-shadow: inset 0 0 0 2px transparent;
+  transition:
+    background 0.3s,
+    box-shadow 0.3s;
+}
+.add-drop.over {
+  background: rgba(52, 199, 89, 0.07);
+  box-shadow: inset 0 0 0 2px rgba(31, 174, 75, 0.55);
+}
+.add-drop:disabled {
+  opacity: 1;
+}
+.add-drop.is-busy .add-copy {
+  opacity: 0.55;
+}
+.add-visual {
+  width: 220px;
+  height: 220px;
+  display: grid;
+  place-items: center;
+}
+.plus-flat {
+  width: 108px;
+  height: 108px;
+  color: var(--blue);
+}
+.add-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  text-align: center;
+  max-width: 52ch;
+}
+.add-copy b {
+  font-size: 1.3rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  transition: color 0.3s;
+}
+.add-drop:hover:not(:disabled) .add-copy b,
+.add-drop:focus-visible .add-copy b {
+  color: var(--blue);
+}
+.add-status:empty {
+  display: none;
+}
+.dash .landing-foot {
+  text-align: center;
+  margin-top: 2rem;
+}
+
+/* Flat mode (Easy, or no WebGL): solid panes, a drawn plus, no 3D layer. */
+.dash.is-flat .plan-card {
+  background: #fff;
+}
+.easy .dash .plan-card {
+  border: 2px solid var(--ink);
+  box-shadow: none;
+}
+.easy .dash .add-drop {
+  box-shadow: inset 0 0 0 2px var(--ink);
+}
+.easy .plus-flat {
+  color: var(--ink);
+}
+/* On one row of cards the bubble hangs below them: leave its lower curve, with the four
+   orbs, clear of the plus. */
+@media (min-width: 1021px) {
+  .dash:not(.is-flat) .add {
+    margin-top: clamp(5rem, 21vh, 11rem);
+  }
+}
+/* Only shown when the cards stack: room for the whole bubble between heading and cards. */
+.bubble-spot {
+  display: none;
+}
+@media (max-width: 1020px) {
+  .plan-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .bubble-spot {
+    display: block;
+    width: 100%;
+    height: clamp(220px, 32vh, 300px);
+    margin-top: 1.4rem;
+  }
+  .bubble-spot + .plans {
+    margin-top: 1.4rem;
+  }
+}
+@media (max-width: 560px) {
+  .plan-grid {
+    grid-template-columns: 1fr;
+    gap: 0.8rem;
+  }
+  .plan-card {
+    min-height: 0;
+  }
+  .add-visual {
+    width: 180px;
+    height: 180px;
+  }
+  .dash .brand-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.2rem;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .plan-card,
+  .plan-card .arrow svg,
+  .add-drop {
+    transition: none;
+  }
+  .plan-card.skeleton {
+    animation: none;
   }
 }
 /* Retain the header's phone fit with the original pill and circle controls. */

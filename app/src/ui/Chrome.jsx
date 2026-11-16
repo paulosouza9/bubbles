@@ -62,7 +62,7 @@ export function TopBar() {
           }}
           title="Back to the start"
         >
-          Burbuja
+          FINANCIAL COACH
         </button>
         {inMonth && (
           <nav className="crumbs" aria-label="Where you are">

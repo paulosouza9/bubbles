@@ -1,11 +1,96 @@
-// Getting in: the landing page (two entries), the bubbles forming, and the short calibration
-// that sets the starting level and teaches the zoom once.
+// Getting in: the dashboard (the four plans in front of one big glass bubble, and a glass
+// plus to add documents), the bubbles forming, and the short calibration that sets the
+// starting level and teaches the zoom once.
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { api } from "../api.js";
 import { speak, stopSpeaking } from "../audio.js";
 import { useStore } from "../store.js";
 
-const PlanPreview = lazy(() => import("../scene/PlanPreview.jsx"));
+const DashWorld = lazy(() => import("../scene/DashWorld.jsx"));
+
+const BAND = {
+  critical: { color: "#ff3b30", label: "Needs attention" },
+  vulnerable: { color: "#ff9f0a", label: "Vulnerable" },
+  stable: { color: "#0071e3", label: "Stable" },
+  strong: { color: "#34c759", label: "Strong" },
+};
+const bandOf = (f) => BAND[f.band] || { color: "#8e8e93", label: "Plan ready" };
+
+function ScoreRing({ score, color }) {
+  const r = 26;
+  const c = 2 * Math.PI * r;
+  const v = Math.max(0, Math.min(100, Number(score) || 0));
+  return (
+    <svg className="score-ring" viewBox="0 0 64 64" aria-hidden="true">
+      <circle cx="32" cy="32" r={r} fill="none" stroke="rgba(29,29,31,0.08)" strokeWidth="5" />
+      <circle cx="32" cy="32" r={r} fill="none" stroke={color} strokeWidth="5" strokeLinecap="round" strokeDasharray={`${(v / 100) * c} ${c}`} transform="rotate(-90 32 32)" />
+      <text x="32" y="38" textAnchor="middle" fontSize="18" fontWeight="650" fill="currentColor">
+        {score ?? "–"}
+      </text>
+    </svg>
+  );
+}
+
+function PlanCard({ f, onOpen, onHot, disabled }) {
+  const band = bandOf(f);
+  const initials = f.label
+    .split(" & ")
+    .map((n) => n[0])
+    .join("");
+  const hot = () => onHot(f.id);
+  const cold = () => onHot(null);
+  return (
+    <li>
+      <button
+        className="glass plan-card"
+        onClick={onOpen}
+        onPointerEnter={hot}
+        onPointerLeave={cold}
+        onFocus={hot}
+        onBlur={cold}
+        disabled={disabled}
+        aria-label={`Open ${f.label} ${f.lastName}'s plan. Health score ${f.score} out of 100, ${band.label}.`}
+        style={{ "--band": band.color }}
+      >
+        <span className="plan-top">
+          <span className="plan-avatar" aria-hidden="true">
+            {initials}
+          </span>
+          <ScoreRing score={f.score} color={band.color} />
+        </span>
+        <span className="plan-name">
+          <b>{f.label}</b>
+          <span>{f.lastName}</span>
+        </span>
+        <span className="plan-meta">
+          {f.city}
+          {f.people ? ` · ${f.people} ${f.people === 1 ? "person" : "people"}` : ""}
+        </span>
+        <span className="plan-foot">
+          <span className="band-pill">
+            <span className="dot" />
+            {band.label}
+          </span>
+          <span className="arrow">
+            Open
+            <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M3 8h10M9 4l4 4-4 4" />
+            </svg>
+          </span>
+        </span>
+      </button>
+    </li>
+  );
+}
+
+function FlatPlus() {
+  return (
+    <svg className="plus-flat" viewBox="0 0 120 120" aria-hidden="true">
+      <rect x="44" y="10" width="32" height="100" rx="12" fill="currentColor" />
+      <rect x="10" y="44" width="100" height="32" rx="12" fill="currentColor" />
+    </svg>
+  );
+}
 
 export function go(path) {
   if (location.pathname !== path) history.pushState({}, "", path);
@@ -16,11 +101,20 @@ export function Landing() {
   const loadError = useStore((s) => s.loadError);
   const openFamily = useStore((s) => s.openFamily);
   const simple = useStore((s) => s.simple || s.easy);
+  const reduced = useStore((s) => s.reduced);
   const [drag, setDrag] = useState(false);
+  const [hover, setHover] = useState(false);
+  const [hot, setHot] = useState(null);
   const [busy, setBusy] = useState("");
   const [miss, setMiss] = useState(false);
   const [openError, setOpenError] = useState("");
   const input = useRef();
+  const grid = useRef();
+  const bubbleSpot = useRef();
+  const plusSpot = useRef();
+  const plusState = useRef({ hover: false, over: false, busy: false });
+  plusState.current = { hover, over: drag, busy: Boolean(busy) };
+  const orbs = families.map((f) => ({ id: f.id, color: bandOf(f).color }));
 
   const open = async (id, via) => {
     setOpenError("");
@@ -51,25 +145,55 @@ export function Landing() {
   };
 
   return (
-    <main className="landing">
+    <main className={`landing dash ${simple ? "is-flat" : ""}`}>
+      {!simple && (
+        <Suspense fallback={null}>
+          <DashWorld bubbleAnchor={grid} bubbleSpot={bubbleSpot} plusAnchor={plusSpot} plusState={plusState} orbs={orbs} hot={hot} reduced={reduced} />
+        </Suspense>
+      )}
       <header className="brand-row">
-        <span className="brand">Burbuja</span>
-        <span className="mute small">A new way to understand your Sherpas plan</span>
+        <span className="brand">FINANCIAL COACH</span>
+        <span className="brand-note">Your Sherpas plan, explained at your level</span>
       </header>
-      <section className="hero">
-        <div className="hero-copy">
-          <h1>Your plan, explained at your level.</h1>
-          <p className="lede">A voice walks you through it, one bubble at a time. Step inside any bubble for more detail, or step back out for the simple version.</p>
-        </div>
-        {!simple && (
-          <Suspense fallback={<div className="plan-preview-loading" role="status">Loading the 3D preview?</div>}>
-            <PlanPreview />
-          </Suspense>
-        )}
+
+      <section className="dash-head">
+        <h1>Choose a plan to explore.</h1>
+        <p className="lede">A voice walks you through it, one bubble at a time. Step inside for detail, or step back out for the simple version.</p>
       </section>
-      <section className="entries" aria-label="Open your plan" aria-busy={Boolean(busy)}>
-        <div
-          className={`glass drop ${drag ? "over" : ""}`}
+
+      {!simple && <div className="bubble-spot" ref={bubbleSpot} aria-hidden="true" />}
+
+      <section className="plans" aria-label="Plans ready to open" aria-busy={Boolean(busy)}>
+        {loadError && (
+          <div className="warn" role="alert">
+            Households could not be loaded.{" "}
+            <button className="link" onClick={() => window.location.reload()}>
+              Try again
+            </button>
+          </div>
+        )}
+        {openError && (
+          <div className="warn" role="alert">
+            {openError}
+          </div>
+        )}
+        <ul className="plan-grid" ref={grid}>
+          {!families.length && !loadError
+            ? [0, 1, 2, 3].map((i) => <li key={i} className="glass plan-card skeleton" aria-hidden="true" />)
+            : families.map((f) => <PlanCard key={f.id} f={f} onOpen={() => open(f.id, "intake")} onHot={setHot} disabled={Boolean(busy)} />)}
+        </ul>
+      </section>
+
+      <section className="add" aria-label="Add your documents">
+        <button
+          type="button"
+          className={`add-drop ${drag ? "over" : ""} ${busy ? "is-busy" : ""}`}
+          onClick={() => input.current.click()}
+          disabled={Boolean(busy)}
+          onPointerEnter={() => setHover(true)}
+          onPointerLeave={() => setHover(false)}
+          onFocus={() => setHover(true)}
+          onBlur={() => setHover(false)}
           onDragOver={(e) => {
             e.preventDefault();
             setDrag(true);
@@ -80,62 +204,34 @@ export function Landing() {
             setDrag(false);
             onFiles(e.dataTransfer.files);
           }}
+          aria-describedby="add-help"
         >
-          <div className="eyebrow">Start with your documents</div>
-          <h2>Drop your statements or your plan report here</h2>
-          <p className="mute">We match them to the plan Sherpas has prepared for you. Your figures come from that plan, never from a guess.</p>
-          <svg className="drop-art" viewBox="0 0 240 120" aria-hidden="true">
-            <defs>
-              <radialGradient id="dropBubble" cx="38%" cy="32%" r="70%">
-                <stop offset="0" stopColor="#fff" />
-                <stop offset="0.7" stopColor="#EAF3FF" />
-                <stop offset="1" stopColor="#CFE3FF" />
-              </radialGradient>
-            </defs>
-            <g fill="#fff" stroke="#D1D1D6" strokeWidth="1.5">
-              <rect x="22" y="30" width="58" height="74" rx="7" transform="rotate(-8 51 67)" />
-              <rect x="40" y="22" width="58" height="74" rx="7" />
-            </g>
-            <g stroke="#E5E5EA" strokeWidth="4" strokeLinecap="round">
-              <path d="M52 40h34M52 52h26M52 64h30M52 76h20" />
-            </g>
-            <path d="M110 60h26" stroke="#C7C7CC" strokeWidth="2" strokeLinecap="round" strokeDasharray="2 6" />
-            <circle cx="182" cy="60" r="40" fill="url(#dropBubble)" stroke="#B9D6FF" strokeWidth="1.5" />
-            <circle cx="168" cy="72" r="7" fill="#34C759" opacity="0.85" />
-            <circle cx="190" cy="50" r="10" fill="#0071E3" opacity="0.8" />
-            <circle cx="198" cy="76" r="5" fill="#FF9F0A" opacity="0.85" />
-          </svg>
-          <button className="btn primary" onClick={() => input.current.click()} disabled={Boolean(busy)}>
-            Choose files
-          </button>
-          <input ref={input} type="file" multiple hidden accept=".pdf,.json,.md,.txt,.csv" onChange={(e) => onFiles(e.target.files)} />
-          {busy && <div className="busy" role="status">{busy}</div>}
-          {miss && <div className="warn" role="alert">We could not match those documents to a plan. Choose your household from the list instead.</div>}
-        </div>
-        <div className="glass intake">
-          <div className="eyebrow">Sherpas already has your details?</div>
-          <h2>Open your plan directly</h2>
-          <p className="mute">If your advisor's firm already completed your intake, there is nothing to upload.</p>
-          {loadError && <div className="warn" role="alert">Households could not be loaded. <button className="link" onClick={() => window.location.reload()}>Try again</button></div>}
-          {openError && <div className="warn" role="alert">{openError}</div>}
-          {!families.length && !loadError && <div className="busy">Loading households…</div>}
-          <ul className="family-list">
-            {families.map((f) => (
-              <li key={f.id}>
-                <button onClick={() => open(f.id, "intake")} disabled={Boolean(busy)} aria-label={`Open ${f.label} ${f.lastName}?s plan`}>
-                  <span>
-                    <b>
-                      {f.label} {f.lastName}
-                    </b>
-                    <span className="mute block">{f.city}</span>
-                  </span>
-                  <span className="arrow">Open</span>
-                </button>
-              </li>
-            ))}
-          </ul>
+          {/* The glass plus is drawn by the 3D layer right behind this spot; flat mode draws it here. */}
+          <span className="add-visual" ref={plusSpot}>
+            {simple && <FlatPlus />}
+          </span>
+          <span className="add-copy">
+            <b>{drag ? "Drop to add your files" : "Add your documents"}</b>
+            <span id="add-help" className="mute small">
+              Drop statements or a plan report here, or click to choose. We match them to the plan Sherpas prepared for you.
+            </span>
+          </span>
+        </button>
+        <input ref={input} type="file" multiple hidden accept=".pdf,.json,.md,.txt,.csv" onChange={(e) => onFiles(e.target.files)} />
+        <div className="add-status" aria-live="polite">
+          {busy && (
+            <div className="busy" role="status">
+              {busy}
+            </div>
+          )}
+          {miss && (
+            <div className="warn" role="alert">
+              We could not match those documents to a plan. Choose your household above instead.
+            </div>
+          )}
         </div>
       </section>
+
       <footer className="landing-foot mute small">
         <span className="block">These are fictional households built for the Sherpas hackathon. This app explains an existing plan. It does not give new financial advice.</span>
       </footer>

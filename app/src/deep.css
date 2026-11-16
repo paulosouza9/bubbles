@@ -1494,11 +1494,6 @@
   font-weight: 500;
   color: var(--grey);
 }
-.drop-art {
-  display: block;
-  width: min(240px, 70%);
-  margin: 0.4rem auto 0.2rem;
-}
 .app.chat-open .inside .in-bottom,
 .app.chat-open .outside .out-cta {
   visibility: hidden;

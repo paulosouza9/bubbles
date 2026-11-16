@@ -2,7 +2,7 @@
 // you step inside it (the camera goes through the glass until the bubble fills the whole
 // screen), you play with its toy, you go deeper for the figures, and when you are done the
 // next bubble takes its place. Text stays in the HTML layer so it can be selected and read.
-import { Environment, Html, Lightformer } from "@react-three/drei";
+import { Html } from "@react-three/drei";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { easing } from "maath";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -14,6 +14,7 @@ import { monthInfo } from "../month.js";
 import { hero } from "../ui/Deep.jsx";
 import { useStore } from "../store.js";
 import { DissolveParticles, dissolve, samplePoints } from "./Dissolve.jsx";
+import { Glass, Studio } from "./studio.jsx";
 import Toy, { bursts } from "./Toys.jsx";
 
 const FOV = 35;
@@ -67,12 +68,6 @@ function Backdrop() {
       <planeGeometry args={[64, 40]} />
       <meshBasicMaterial map={tex} toneMapped={false} />
     </mesh>
-  );
-}
-
-function Glass({ r }) {
-  return (
-    <meshPhysicalMaterial color="#ffffff" transmission={1} thickness={r * 0.9} roughness={0.03} ior={1.17} dispersion={3} clearcoat={1} clearcoatRoughness={0.06} iridescence={0.18} iridescenceIOR={1.2} envMapIntensity={0.85} toneMapped={false} />
   );
 }
 
@@ -772,17 +767,7 @@ function Scene() {
     <>
       <color attach="background" args={["#ffffff"]} />
       <Backdrop />
-      <Environment resolution={256} frames={1}>
-        <mesh scale={50}>
-          <sphereGeometry args={[1, 32, 32]} />
-          <meshBasicMaterial color="#c3cde0" side={THREE.BackSide} />
-        </mesh>
-        <Lightformer form="circle" intensity={5} color="#ffffff" position={[-3, 9, 5]} scale={7} target={[0, 0, 0]} />
-        <Lightformer form="circle" intensity={0.8} color="#ffffff" position={[0, 0, 12]} scale={26} target={[0, 0, 0]} />
-        <Lightformer form="circle" intensity={2.2} color="#cfe0ff" position={[-10, 1, 1]} scale={6} target={[0, 0, 0]} />
-        <Lightformer form="circle" intensity={2.2} color="#ffd6e6" position={[10, -1, 1]} scale={6} target={[0, 0, 0]} />
-        <Lightformer form="circle" intensity={1.6} color="#dafbea" position={[2, -9, 3]} scale={6} target={[0, 0, 0]} />
-      </Environment>
+      <Studio />
       <Rig layout={layout} cloud={cloud} />
       {plan && showCloud && cloud && <Cloud cloud={cloud} labels={labelReady} />}
       {!plan && layout.nodes.map((n, i) => <DecorBubble key={n.id} node={n} index={i} />)}

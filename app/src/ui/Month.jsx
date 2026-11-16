@@ -64,7 +64,7 @@ export function Podcast({ onDone }) {
   };
   useEffect(() => {
     if (!("mediaSession" in navigator) || !lines) return;
-    navigator.mediaSession.metadata = new MediaMetadata({ title: `Your money, month ${month}`, artist: `Burbuja for ${names}`, album: "Monthly review" });
+    navigator.mediaSession.metadata = new MediaMetadata({ title: `Your money, month ${month}`, artist: `Financial Coach for ${names}`, album: "Monthly review" });
     navigator.mediaSession.setActionHandler("play", () => play());
     navigator.mediaSession.setActionHandler("pause", pause);
     navigator.mediaSession.setActionHandler("nexttrack", () => skip(1));
