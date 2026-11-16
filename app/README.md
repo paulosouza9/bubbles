@@ -14,13 +14,9 @@ npm run dev        # API on :8787, app on http://localhost:5173
 
 One process, production build: `npm start`, then open http://localhost:8787.
 
-## UI preview branch
+## Interface and 3D preview
 
-`ui/impeccable-polish` contains the Impeccable refinement and an interactive Three.js preview. The original version remains on `main`; this branch has not been merged.
-
-The preview keeps the original pill buttons, circular icon buttons, glass surfaces, typography and page layouts. The larger top bubble strip remains, including its current-topic label and horizontal scrolling on phones. The added Three.js preview supports dragging and keyboard rotation, respects reduced motion and uses the existing non-WebGL fallback. Household plans, document upload, voice, chat, missions and monthly review remain available.
-
-Run `npm run dev` in this directory and open http://localhost:5173. To compare versions after saving any new edits, run `git switch main` or `git switch ui/impeccable-polish` from the repository root. Merge only after reviewing the preview: switch to `main`, then run `git merge ui/impeccable-polish`.
+The app keeps the original pill buttons, circular icon buttons, glass surfaces, typography and page layouts. The larger top bubble strip includes its current-topic label and horizontal scrolling on phones. The added Three.js preview supports dragging and keyboard rotation, respects reduced motion and uses the existing non-WebGL fallback. Household plans, document upload, voice, chat, missions and monthly review remain available.
 
 Validation: production build, rendered desktop and phone layouts, keyboard rotation, household opening, upload and server error recovery, bubble detail navigation, monthly navigation and Easy mode. Browser checks use synthetic households and intercept audit and speech requests.
 
