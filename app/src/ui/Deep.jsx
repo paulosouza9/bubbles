@@ -5,6 +5,7 @@
 // The guided path is three bubbles (what's working, what needs you, your next steps). Every
 // other topic is one zoom out, in "All topics".
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useShallow } from "zustand/react/shallow";
 import { sfx, speak, stopSpeaking } from "../audio.js";
 import { STATUS_COLOR, STATUS_WORD, sentences, usdShort } from "../format.js";
@@ -16,6 +17,7 @@ import { pathOf, ROLE } from "../path.js";
 import { fresh, heard, outsideLine } from "../repeat.js";
 import { useStore } from "../store.js";
 import Detail from "./Detail.jsx";
+import { DownloadPlanButton } from "./Chrome.jsx";
 import { MissionChip } from "./Missions.jsx";
 import { ActionMoment } from "./Moments.jsx";
 import { StepsInside } from "./Month.jsx";
@@ -30,11 +32,13 @@ function useOverlayEscape(onClose) {
 }
 
 // A full-screen "bubble" for longer reading: it grows from the middle until no edge is left.
+// Drawn at the top of the page (a portal), so no panel it opens from can tuck the zoom rail,
+// the arrows or the top bar over it.
 export function BubbleScreen({ title, eyebrow, onClose, children, foot }) {
   const close = useRef();
   useOverlayEscape(onClose);
   useEffect(() => close.current?.focus(), []);
-  return (
+  return createPortal(
     <div className="bubble-screen" role="dialog" aria-modal="true" aria-label={title}>
       <button ref={close} className="icon-btn bs-close" onClick={onClose} aria-label="Close">
         ✕
@@ -47,7 +51,8 @@ export function BubbleScreen({ title, eyebrow, onClose, children, foot }) {
         </div>
         {foot && <div className="bs-foot">{foot}</div>}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
@@ -650,7 +655,13 @@ function Deeper({ b }) {
         <h1>
           <Dot status={b.status} /> {b.title}
         </h1>
-        <span className="mute small">In detail</span>
+        <span className="detail-badge">
+          <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+            <circle cx="10.5" cy="10.5" r="6" fill="none" stroke="currentColor" strokeWidth="2" />
+            <path d="M15 15l5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          </svg>
+          In detail<span className="detail-badge-sub"> · every figure and chart</span>
+        </span>
       </header>
       <DiveHandle dir="out" />
       <div className="detail-scroll" tabIndex={0} aria-label={`${b.title}, in detail`}>
@@ -721,11 +732,14 @@ function CloudHome() {
           {proj !== plan.score.value ? <> · {proj} projected</> : null} · {left ? `${total.length - left} of ${total.length} explored. Step into a dim bubble to light it up.` : "Every bubble explored. Tap any to revisit it."}
         </p>
       </header>
-      {last && (
-        <button className="btn primary continue-pill" onClick={() => useStore.getState().jump(last.id)}>
-          Continue with {last.title} ›
-        </button>
-      )}
+      <div className="cloud-actions">
+        {last && (
+          <button className="btn primary" onClick={() => useStore.getState().jump(last.id)}>
+            Continue with {last.title} ›
+          </button>
+        )}
+        <DownloadPlanButton />
+      </div>
     </main>
   );
 }
@@ -746,7 +760,7 @@ export function ZoomIcon({ dir }) {
 // Nothing is dimmed or blocked, and it can be skipped at any point.
 const TOUR = [
   { target: ".out-cta .btn.primary", title: "Look inside", text: "Tap the bubble, or “Step inside”, to see what it holds." },
-  { target: ".dive.in", title: "Every figure", text: "Want the exact numbers? Tap “See every figure”." },
+  { target: ".dive.in", title: "In detail", text: "Want every figure and chart? Tap “See in detail”." },
   { target: ".dive.out", title: "Back up", text: "Come back to the simple view whenever you like. The zoom on the right does the same." },
   { target: ".nav-arrow.next", title: "Next bubble", text: "When you are ready, move on to the next bubble." },
 ];
@@ -839,7 +853,7 @@ function DiveHandle({ dir }) {
   return (
     <button className={`dive ${dir}`} onClick={go} aria-label={dir === "in" ? "Step in: see every figure, in detail" : "Step out: back to the simple view"}>
       {dir === "out" && chevron}
-      <span>{dir === "in" ? "See every figure" : "Back to the simple view"}</span>
+      <span>{dir === "in" ? "See in detail" : "Back to the simple view"}</span>
       {dir === "in" && chevron}
     </button>
   );
@@ -905,7 +919,7 @@ function ZoomRail() {
       </nav>
       {showHint && (
         <div className="zoom-hint glass" role="note">
-          <b>This is your zoom.</b> Step in for more detail, step out for the bigger picture. Scrolling or pinching works too.
+          <b>This is your zoom.</b> Step in for more detail, step out for the bigger picture. Pinching works too, and so does scrolling from the outside of a bubble.
           <button className="link" onClick={dismissZoomHint}>
             Got it
           </button>

@@ -108,7 +108,7 @@ function CushionDetail({ data }) {
   const mx = (m) => 20 + (m / mMax) * (W - 40);
   return (
     <>
-      <Chart i={0} wide title="Your cash against the targets" sub="The blue line is the cash you can reach today.">
+      <Chart i={0} wide title="Your cash against the targets" sub="Blue is the cash you can reach today.">
         <svg viewBox={`0 0 ${W} ${60 + rows.length * 46}`} className="dsvg">
           {rows.map((r, i) => (
             <g key={r.label}>
@@ -117,10 +117,13 @@ function CushionDetail({ data }) {
               </text>
               <Bar x={20} y={30 + i * 46} w={x(r.maxv) - 20} h={12} fill="#F2F2F7" delay={0.1} />
               <Bar x={x(r.min)} y={30 + i * 46} w={x(r.maxv) - x(r.min)} h={12} fill={r.color} opacity={0.75} delay={0.3 + i * 0.15} />
+              {/* How far today's cash reaches along this target. */}
+              <Bar x={20} y={30 + i * 46} w={Math.min(x(data.cash), x(r.maxv)) - 20} h={12} fill={C.blue} opacity={0.22} delay={0.45 + i * 0.15} />
+              {/* The marker crosses the bar only, never the label above it. */}
+              <line x1={x(data.cash)} x2={x(data.cash)} y1={25 + i * 46} y2={i === rows.length - 1 ? 44 + rows.length * 46 : 47 + i * 46} stroke={C.blue} strokeWidth="2.5" strokeLinecap="round" className="draw-y" />
             </g>
           ))}
-          <line x1={x(data.cash)} x2={x(data.cash)} y1={8} y2={44 + rows.length * 46} stroke={C.blue} strokeWidth="2.5" className="draw-y" />
-          <text x={x(data.cash) + 6} y={52 + rows.length * 46} className="dl strong blue">
+          <text x={x(data.cash) + (x(data.cash) > W * 0.7 ? -6 : 6)} y={52 + rows.length * 46} textAnchor={x(data.cash) > W * 0.7 ? "end" : "start"} className="dl strong blue">
             {usd(data.cash)} today
           </text>
         </svg>

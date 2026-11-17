@@ -15,6 +15,12 @@ export const api = {
   month: (body) => post("/api/month", body),
   checkin: (body) => post("/api/checkin", body),
   log: (body) => post("/api/log", body).catch(() => {}),
+  report: async (body) => {
+    const r = await fetch("/api/report", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const name = /filename="([^"]+)"/.exec(r.headers.get("content-disposition") || "")?.[1] || "financial-plan.pdf";
+    return { blob: await r.blob(), name };
+  },
   tts: async (text, voice) => {
     const r = await fetch("/api/tts", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ text, voice }) });
     if (!r.ok) throw new Error("tts unavailable");

@@ -26,9 +26,51 @@ function saveUsage() {
 }
 export function spend() {
   const total = usage.textUsd + usage.ttsUsd + usage.sttUsd;
-  return { ...usage, totalUsd: total, capUsd: AI_BUDGET_USD, ttsCapUsd: config.ttsBudgetUsd, left: AI_BUDGET_USD - total };
+  return {
+    ...usage,
+    realtimeUsd: usage.realtimeUsd || 0,
+    totalUsd: total,
+    capUsd: AI_BUDGET_USD,
+    ttsCapUsd: config.ttsBudgetUsd,
+    realtimeCapUsd: config.realtimeBudgetUsd,
+    left: AI_BUDGET_USD - total,
+  };
 }
 const overBudget = () => spend().totalUsd >= AI_BUDGET_USD;
+
+// ---- Realtime voice (the live month-end check-in) ---------------------------------
+// Kept apart from the text and speech budget: it has its own cap, and the live check-in
+// falls back to the typed one once the cap is reached.
+// Estimated USD per million tokens [text in, audio in, text out, audio out], used only
+// when the proxy reports no cost of its own.
+const REALTIME_PRICES = {
+  "gpt-realtime-2.1-mini": [0.6, 10, 2.4, 20],
+  "gpt-realtime-2.1": [4, 32, 16, 64],
+};
+export const realtimeLeft = () => config.realtimeBudgetUsd - (usage.realtimeUsd || 0);
+export function addRealtimeSpend(model, u = {}) {
+  let cost;
+  if (typeof u.cost === "number" && u.cost > 0) cost = u.cost;
+  else {
+    const [ti, ai, to, ao] = REALTIME_PRICES[model] || REALTIME_PRICES["gpt-realtime-2.1"];
+    const inD = u.input_token_details || {};
+    const outD = u.output_token_details || {};
+    const inAudio = inD.audio_tokens ?? 0;
+    const inText = inD.text_tokens ?? Math.max(0, (u.input_tokens || 0) - inAudio);
+    const outAudio = outD.audio_tokens ?? 0;
+    const outText = outD.text_tokens ?? Math.max(0, (u.output_tokens || 0) - outAudio);
+    cost = (inText * ti + inAudio * ai + outText * to + outAudio * ao) / 1e6;
+  }
+  usage.realtimeUsd = (usage.realtimeUsd || 0) + cost;
+  saveUsage();
+  return cost;
+}
+// Transcribing what the person says is billed by the minute on top of the model.
+export function addRealtimeSeconds(seconds) {
+  usage.realtimeUsd = (usage.realtimeUsd || 0) + (seconds / 60) * 0.003;
+  usage.realtimeSeconds = (usage.realtimeSeconds || 0) + seconds;
+  saveUsage();
+}
 
 // ---- Text -----------------------------------------------------------------------
 

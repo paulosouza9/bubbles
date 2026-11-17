@@ -3,11 +3,14 @@
 import { appendFileSync, existsSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import express from "express";
+import { wantsHuman } from "../shared/human.js";
 import { projectedScore } from "../shared/score.js";
 import { getCase, listCaseIds, sourceStatus } from "./cases.mjs";
 import { APP_DIR, config } from "./env.mjs";
 import { identify } from "./identify.mjs";
 import { chatJson, numberSet, numbersOk, probeVoice, spend, stt, tts, voiceStatus } from "./llm.mjs";
+import { attachRealtime, realtimeStatus } from "./realtime.mjs";
+import { buildReport, reportFileName } from "./report.mjs";
 import { buildPlan, planCorpus, publicPlan } from "./script.mjs";
 
 const app = express();
@@ -27,7 +30,7 @@ function log(event) {
 // ---- Status, families, plan -------------------------------------------------------
 
 app.get("/api/status", (_req, res) => {
-  res.json({ data: sourceStatus, voice: voiceStatus(), spend: spend(), hasTeamKey: Boolean(config.teamKey), hasMcpToken: Boolean(config.mcpToken) });
+  res.json({ data: sourceStatus, voice: voiceStatus(), realtime: realtimeStatus(), spend: spend(), hasTeamKey: Boolean(config.teamKey), hasMcpToken: Boolean(config.mcpToken) });
 });
 
 app.get(
@@ -110,6 +113,7 @@ Rules:
 - You may explain what a financial word means in plain language, without figures.
 - If the answer is not in the plan, say "That isn't in your plan" and offer the closest thing that is.
 - Never give a new recommendation. Only explain the ones already in the plan.
+- If the person asks to talk to a real person, a human, their advisor or someone at the firm, say yes in one short sentence and add the action talk_to_human.
 - If the person asks about a decision that is high-impact or hard to undo (buying insurance, changing retirement accounts, moving large sums, buying a home), or anything outside the plan, say a person should be part of that decision and add the action talk_to_human.
 - If the question touches a MUST KNOW, include it in plain words. Never write the words "MUST KNOW" or use capitals for emphasis.
 - At most 3 short sentences. Match the person's level: profile "novice" or "action" = everyday words and no jargon; "understand" = explain the why; "expert" = precise terms and figures. If easy_mode is true, use very short sentences.
@@ -170,13 +174,15 @@ app.post(
         : { text: "I can only answer from your plan, and I could not find that in it. A person at your advisor's firm can help with this one.", actions: [{ type: "talk_to_human", label: "Talk to a person" }] };
       out.fromPlanOnly = true;
     }
-    const actions = (Array.isArray(out.actions) ? out.actions : [])
+    let actions = (Array.isArray(out.actions) ? out.actions : [])
       .filter((a) => ["go_to_bubble", "zoom_in", "zoom_out", "talk_to_human"].includes(a?.type) && (a.type !== "go_to_bubble" || ids.includes(a.bubble)))
       .slice(0, 2)
       .map((a) => ({ type: a.type, bubble: a.bubble, label: String(a.label || "").slice(0, 40) || (a.type === "talk_to_human" ? "Talk to a person" : "Show me") }));
     const text = String(out.text)
       .replace(/\s*\b(talk_to_human|go_to_bubble|zoom_in|zoom_out)\b\.?/g, "")
       .trim();
+    // Asking for a person always gets the way to reach one, whatever the model returned.
+    if (wantsHuman(q) && !actions.some((a) => a.type === "talk_to_human")) actions = [{ type: "talk_to_human", label: "Talk to a person" }, ...actions].slice(0, 2);
     log({ type: "ask", family, person, zoom, profile, bubble: screen?.bubble_id, selection, question: q, answer: text, guarded });
     res.json({ text, actions });
   }),
@@ -325,6 +331,23 @@ app.post(
   }),
 );
 
+// ---- The whole plan as a PDF -------------------------------------------------------
+
+app.post(
+  "/api/report",
+  wrap(async (req, res) => {
+    const { family, person, missions, notes, explored } = req.body || {};
+    if (!(await listCaseIds()).includes(family)) return res.status(404).json({ error: "Unknown household" });
+    const plan = await buildPlan(family);
+    const doc = buildReport(plan, { person, missions, notes, explored });
+    res.setHeader("content-type", "application/pdf");
+    res.setHeader("content-disposition", `attachment; filename="${reportFileName(plan)}"`);
+    log({ type: "report_download", family, person });
+    doc.pipe(res);
+    doc.end();
+  }),
+);
+
 // ---- Audit trail and "talk to a person" -------------------------------------------
 
 app.post("/api/log", (req, res) => {
@@ -340,7 +363,9 @@ if (existsSync(dist)) {
   app.use((req, res, next) => (req.method === "GET" && !req.path.startsWith("/api") ? res.sendFile(join(dist, "index.html")) : next()));
 }
 
-app.listen(config.port, () => {
+const server = app.listen(config.port, () => {
   console.log(`Burbuja API on http://localhost:${config.port}  (MCP token: ${config.mcpToken ? "yes" : "no"}, team key: ${config.teamKey ? "yes" : "no"})`);
   if (config.teamKey) probeVoice().then((v) => console.log(`Voice: speech=${v.tts}${v.ttsReason ? ` (${v.ttsReason})` : ""}, listening=${v.stt}`));
 });
+// The live month-end check-in: a WebSocket relay to the realtime voice model.
+attachRealtime(server, { log });

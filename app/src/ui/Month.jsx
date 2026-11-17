@@ -8,6 +8,8 @@ import { speak, speakQueue, stopSpeaking, voice } from "../audio.js";
 import { ScoreRing } from "../miniapps/index.jsx";
 import { useStore } from "../store.js";
 import { MicButton } from "./Chat.jsx";
+import { DownloadPlanButton } from "./Chrome.jsx";
+import { TalkItThrough } from "./LiveCheckin.jsx";
 import { BubbleScreen } from "./Deep.jsx";
 import { MissionRow, Ring, useMissions } from "./Missions.jsx";
 
@@ -330,7 +332,7 @@ export function StepsInside() {
       )}
       {tab === "checkin" && (
         <div className="in-free">
-          <Checkin onDone={() => {}} />
+          <TalkItThrough onDone={() => {}} />
         </div>
       )}
       {tab === "next" && (
@@ -351,6 +353,7 @@ export function StepsInside() {
               <button className="btn" onClick={openMeeting}>
                 Month-end meeting
               </button>
+              <DownloadPlanButton label="Download PDF" />
               <button className="btn primary" onClick={openMonthPage}>
                 Open this month ›
               </button>

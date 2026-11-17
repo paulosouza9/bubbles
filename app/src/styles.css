@@ -198,6 +198,28 @@ h3 {
   color: #fff;
   border-color: var(--ink);
 }
+/* "Talk to a person" stays in the top bar on every screen. */
+.btn.human-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.75rem;
+  min-height: 2rem;
+  font-size: 0.8rem;
+  color: var(--blue);
+  border-color: rgba(0, 113, 227, 0.3);
+}
+.btn.human-btn:hover:not(:disabled) {
+  background: rgba(0, 113, 227, 0.06);
+}
+@media (max-width: 600px) {
+  .btn.human-btn {
+    padding-inline: 0.6rem;
+  }
+  .btn.human-btn .human-label {
+    display: none;
+  }
+}
 .easy .btn {
   border: 2px solid var(--ink);
   min-height: 2.9rem;
@@ -1160,6 +1182,38 @@ h3 {
   border-radius: 999px;
   transition: box-shadow 0.2s;
 }
+/* The headset at the start of the chat bar: help, with a person one tap away. */
+.chat-bar:has(.help-btn) {
+  padding-left: 0.4rem;
+}
+.icon-btn.help-btn {
+  width: 2.4rem;
+  height: 2.4rem;
+  color: var(--blue);
+  border-color: rgba(0, 113, 227, 0.3);
+  background: rgba(0, 113, 227, 0.06);
+}
+.icon-btn.help-btn:hover,
+.icon-btn.help-btn.on {
+  background: var(--blue);
+  border-color: var(--blue);
+  color: #fff;
+}
+.follow-up {
+  margin-top: 0.55rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 14px;
+  background: rgba(0, 113, 227, 0.06);
+  font-size: 0.9rem;
+}
+.follow-up .msg-actions {
+  margin-top: 0.4rem;
+}
+.follow-up .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
 .chat-bar:focus-within {
   box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.35), 0 8px 24px rgba(29, 43, 79, 0.1);
 }
@@ -1172,6 +1226,27 @@ h3 {
   outline: none;
   min-width: 0;
   min-height: 2.4rem;
+}
+/* End of the walk-through: take the whole plan away as a PDF. */
+.keep-copy {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+  padding: 0.85rem 1rem;
+  margin-bottom: 1.2rem;
+  border-radius: 16px;
+  background: rgba(0, 113, 227, 0.07);
+  border: 1px solid rgba(0, 113, 227, 0.18);
+}
+.keep-copy > div {
+  flex: 1 1 200px;
+}
+.chat-sheet .chat-human {
+  margin-left: auto;
+  align-self: center;
+  white-space: nowrap;
 }
 .chat-sheet {
   border-radius: 26px;

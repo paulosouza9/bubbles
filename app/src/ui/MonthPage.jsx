@@ -10,7 +10,8 @@ import { ScoreRing } from "../miniapps/index.jsx";
 import { daysLeftText, monthInfo } from "../month.js";
 import { useStore } from "../store.js";
 import { MissionRow, Ring, useMissions } from "./Missions.jsx";
-import { Checkin, Picker, Podcast } from "./Month.jsx";
+import { TalkItThrough } from "./LiveCheckin.jsx";
+import { Picker, Podcast } from "./Month.jsx";
 
 const AGENDA = [
   { id: "listen", title: "Listen to your month", minutes: 3 },
@@ -330,7 +331,7 @@ export function Meeting() {
               <>
                 <TickList />
                 <h3 className="ticks-talk">Then talk it through</h3>
-                <Checkin onDone={() => go(2)} />
+                <TalkItThrough onDone={() => go(2)} />
               </>
             )}
             {a.id === "advisor" && (

@@ -141,6 +141,14 @@ export function TopBar() {
             ))}
           </div>
         )}
+        {/* Always one tap away, on every screen: a person at the advisor's firm. */}
+        <button className="btn human-btn" onClick={() => useStore.getState().setHumanOpen(true)} aria-label="Talk to a person" title="Talk to a person at your advisor's firm">
+          <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+            <circle cx="12" cy="8" r="3.8" fill="none" stroke="currentColor" strokeWidth="2.2" />
+            <path d="M4.5 20.5a7.5 7.5 0 0 1 15 0" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+          </svg>
+          <span className="human-label">Talk to a person</span>
+        </button>
         <button className={`btn toggle ${easy ? "on" : ""}`} onClick={() => setEasy(!easy)} aria-pressed={easy} title="Larger text, simpler steps, no gestures">
           Easy mode
         </button>
@@ -190,6 +198,11 @@ export function TopBar() {
               </button>
             ))}
             <div className="menu-title">Plan</div>
+            {journeyDone && (
+              <button role="menuitem" onClick={() => { setMenu(false); useStore.getState().downloadReport(); }}>
+                Download your plan as a PDF
+              </button>
+            )}
             <button role="menuitem" onClick={() => { setMenu(false); startJourney(); }}>
               Replay the walk-through
             </button>
@@ -209,6 +222,19 @@ export function TopBar() {
         )}
       </div>
     </header>
+  );
+}
+
+// "Download your plan as a PDF": offered once the walk-through is done.
+export function DownloadPlanButton({ className = "btn", label = "Download your plan (PDF)" }) {
+  const busy = useStore((s) => s.reportBusy);
+  return (
+    <button className={`${className} download-plan`} onClick={() => useStore.getState().downloadReport()} disabled={busy} aria-busy={busy}>
+      <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+        <path d="M12 4v11M7.5 10.5L12 15l4.5-4.5M5 19h14" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+      {busy ? "Preparing your PDF…" : label}
+    </button>
   );
 }
 

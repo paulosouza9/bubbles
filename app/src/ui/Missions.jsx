@@ -7,6 +7,7 @@ import { sfx } from "../audio.js";
 import { usd } from "../format.js";
 import { ScoreRing } from "../miniapps/index.jsx";
 import { useStore } from "../store.js";
+import { DownloadPlanButton } from "./Chrome.jsx";
 import { MustKnow } from "./Panels.jsx";
 import { monthInfo } from "../month.js";
 
@@ -103,6 +104,7 @@ export function MissionsPanel() {
   const { list, statuses, month } = useMissions();
   const score = useStore((s) => s.plan.score.value);
   const proj = useStore(useShallow((s) => s.projected()));
+  const journeyDone = useStore((s) => s.journeyDone);
   const { setMissionsOpen, openDecision, setPhase } = useStore.getState();
   if (!openState) return null;
   const done = statuses.filter((s) => s === "done").length;
@@ -148,6 +150,15 @@ export function MissionsPanel() {
         >
           Go to the month-end review
         </button>
+        {journeyDone && (
+          <div className="keep-copy">
+            <div>
+              <b>Keep a copy of your plan</b>
+              <span className="mute small block">Every topic, figure and step in one PDF, with your progress so far.</span>
+            </div>
+            <DownloadPlanButton className="btn primary" label="Download PDF" />
+          </div>
+        )}
       </aside>
     </div>
   );

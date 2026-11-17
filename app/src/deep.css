@@ -785,6 +785,48 @@
 /* ---- Deeper: the detailed version, drawn straight on the bubble (no cards) --------------- */
 .inside.deeper {
   --base: 1.02s; /* the charts appear as the particles land on them */
+  isolation: isolate;
+}
+/* In detail reads as a different place from Inside: a cool, framed sheet of graph paper
+   laid over the bubble, so the charts sit on something that looks made for figures. */
+.inside.deeper::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: calc(var(--top) + 2px) 10px 8px;
+  border-radius: 30px;
+  border: 1px solid rgba(0, 113, 227, 0.2);
+  background-color: rgba(238, 244, 252, 0.66);
+  background-image: radial-gradient(rgba(0, 113, 227, 0.13) 1px, transparent 1.4px);
+  background-size: 20px 20px;
+  box-shadow: inset 0 0 0 6px rgba(255, 255, 255, 0.45), 0 10px 40px rgba(29, 43, 79, 0.06);
+  pointer-events: none;
+  animation: fade 0.5s 0.2s both;
+}
+.detail-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.22rem 0.75rem;
+  border-radius: 999px;
+  background: rgba(0, 113, 227, 0.1);
+  color: var(--blue);
+  font-size: 0.8rem;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+}
+.detail-badge-sub {
+  font-weight: 500;
+  color: #3a6fae;
+}
+@media (max-width: 600px) {
+  .inside.deeper::before {
+    inset-inline: 4px;
+    border-radius: 22px;
+  }
+  .detail-badge-sub {
+    display: none;
+  }
 }
 /* The particles already did the moving: the charts simply fade in under them, together. */
 .inside.deeper .dchart,
@@ -2138,13 +2180,28 @@
 }
 
 /* ---- Cloud: pick up where you left off ---------------------------------------------------- */
-.continue-pill {
+/* The home cloud's actions: carry on where you were, or take the whole plan as a PDF. */
+.cloud-actions {
   position: absolute;
   bottom: 10px;
   left: 50%;
   transform: translateX(-50%);
-  white-space: nowrap;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+  width: max-content;
+  max-width: calc(100vw - 32px);
   animation: fade 0.5s 0.8s both;
+}
+.btn.download-plan {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+.btn.download-plan:disabled {
+  opacity: 0.7;
+  cursor: progress;
 }
 .cl-here {
   margin-top: 0.2rem;
@@ -2670,5 +2727,59 @@ html.calm-motion .tour-ring {
   }
   .seq-now {
     max-width: 44vw;
+  }
+}
+
+/* ---- The live check-in: talking with the coach out loud ---------------------------------------- */
+.live-start {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  align-items: flex-start;
+  padding: 0.4rem 0 0.6rem;
+}
+.live-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.live-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.35rem 0.4rem 0.35rem 0.9rem;
+  margin: 0.3rem 0 0.5rem;
+}
+.live-state {
+  font-weight: 600;
+  font-size: 0.92rem;
+  flex: 1;
+  min-width: 8rem;
+}
+.live-left {
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+}
+/* Grows with the voice on the microphone; turns blue while the coach speaks. */
+.live-dot {
+  width: 0.8rem;
+  height: 0.8rem;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 0 calc(var(--level, 0) * 7px) rgba(52, 199, 89, 0.25);
+  transition: box-shadow 0.2s ease-out;
+  flex: none;
+}
+.live-bar.coach .live-dot {
+  background: var(--blue);
+  box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.18);
+}
+@media (prefers-reduced-motion: reduce) {
+  .live-dot {
+    transition: none;
   }
 }

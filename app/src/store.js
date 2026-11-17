@@ -1,6 +1,7 @@
 // App state. One store, persisted per family in localStorage (the cloud, the profile, the
 // missions and the notes survive a reload, like the idea asks).
 import { create } from "zustand";
+import { wantsHuman } from "../shared/human.js";
 import { projectedScore } from "../shared/score.js";
 import { api } from "./api.js";
 import { setServerVoice, sfx, stopSpeaking, voice } from "./audio.js";
@@ -97,7 +98,7 @@ export const useStore = create((set, get) => ({
   simple: false, // true when the flat 2D view is used (no WebGL, or 3D switched off in the menu)
   reduced: false, // the system asks for less motion: keep the 3D world but cut instead of travel
   muted: false,
-  chat: { open: false, messages: [], quote: null, pending: false },
+  chat: { open: false, messages: [], quote: null, pending: false, support: false },
   decision: null,
   celebrate: null, // { title, from, to, kind } shown after a step is done
   actReady: false, // the action moment is on screen: the toy makes room for it
@@ -538,7 +539,23 @@ export const useStore = create((set, get) => ({
     set((s) => ({ chat: { ...s.chat, open: true, quote } }));
   },
   closeChat() {
-    set((s) => ({ chat: { ...s.chat, open: false, quote: null } }));
+    set((s) => ({ chat: { ...s.chat, open: false, quote: null, support: false } }));
+  },
+  // The headset button: the chat opens as a help desk, and every answer ends by asking whether
+  // it is all clear or the person would rather speak with someone.
+  openSupport() {
+    stopSpeaking();
+    const greeting = { role: "assistant", greeting: true, text: "Hi, I am here to help. What would you like to know about your plan?" };
+    set((s) => {
+      const last = s.chat.messages.at(-1);
+      return { chat: { ...s.chat, open: true, quote: null, support: true, messages: last?.greeting ? s.chat.messages : [...s.chat.messages, greeting] } };
+    });
+    get().log({ type: "support_open" });
+  },
+  answerFollowUp(index, choice) {
+    set((s) => ({ chat: { ...s.chat, messages: s.chat.messages.map((m, i) => (i === index ? { ...m, followUp: choice } : m)) } }));
+    get().log({ type: "support_follow_up", choice });
+    if (choice === "human") set({ humanOpen: true });
   },
   async ask(question) {
     const s = get();
@@ -547,6 +564,12 @@ export const useStore = create((set, get) => ({
     const userMsg = { role: "user", text: question, quote };
     set({ chat: { ...s.chat, open: true, quote: null, pending: true, messages: [...s.chat.messages, userMsg] } });
     if (b) set((st) => ({ asked: { ...st.asked, [b.id]: [...(st.asked[b.id] || []), { q: question, quote, month: st.missions.month }] } }));
+    // Asking for a person never waits on the model: the way to reach one opens straight away.
+    if (wantsHuman(question)) {
+      const reply = { text: "Of course. A person at your advisor's firm can talk this through with you. I have opened the way to reach them.", actions: [{ type: "talk_to_human", label: "Talk to a person" }] };
+      set((st) => ({ humanOpen: true, chat: { ...st.chat, pending: false, messages: [...st.chat.messages, { role: "assistant", ...reply }] } }));
+      return reply;
+    }
     let reply;
     try {
       reply = await api.ask({
@@ -558,13 +581,17 @@ export const useStore = create((set, get) => ({
         selection: quote,
         question,
         screen: b ? { bubble_id: b.id, bubble_title: b.title, status: b.status, miniapp: b.miniapp.template, text_on_screen: s.level <= 2 ? b.floor[s.styleNow()] : b.building } : { view: s.phase },
-        history: s.chat.messages.slice(-6).map((m) => ({ role: m.role, text: m.text })),
+        history: s.chat.messages.filter((m) => !m.greeting).slice(-6).map((m) => ({ role: m.role, text: m.text })),
       });
     } catch {
       reply = { text: "I could not reach the plan helper just now. Please try again in a moment.", actions: [] };
     }
-    set((st) => ({ chat: { ...st.chat, pending: false, messages: [...st.chat.messages, { role: "assistant", text: reply.text, actions: reply.actions || [] }] } }));
-    return reply;
+    // From the headset button, the answer ends with "all clear, or a person?" (which already
+    // offers the person, so a second "Talk to a person" button is left out).
+    const support = get().chat.support;
+    const actions = (reply.actions || []).filter((a) => !support || a.type !== "talk_to_human");
+    set((st) => ({ chat: { ...st.chat, pending: false, messages: [...st.chat.messages, { role: "assistant", text: reply.text, actions, ...(support ? { followUp: "open" } : {}) }] } }));
+    return support ? { ...reply, followUp: true } : reply;
   },
   runAction(a) {
     if (a.type === "go_to_bubble") {
@@ -611,6 +638,27 @@ export const useStore = create((set, get) => ({
     get().setReduced(motion === "calm" || (motion === "auto" && os));
   },
 
+  // The whole plan as a PDF, with this person's progress, saved straight to their device.
+  reportBusy: false,
+  async downloadReport() {
+    const s = get();
+    if (!s.family || s.reportBusy) return;
+    set({ reportBusy: true });
+    try {
+      const { blob, name } = await api.report({ family: s.family, person: s.person, missions: s.missions, notes: s.notes, explored: s.explored });
+      const url = URL.createObjectURL(blob);
+      const a = Object.assign(document.createElement("a"), { href: url, download: name });
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+      get().showToast({ text: `Saved ${name} to your downloads.` });
+    } catch {
+      get().showToast({ text: "The PDF could not be made just now. Please try again in a moment." });
+    } finally {
+      set({ reportBusy: false });
+    }
+  },
   log(event) {
     const s = get();
     if (!s.family) return;

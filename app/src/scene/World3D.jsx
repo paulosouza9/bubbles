@@ -798,6 +798,13 @@ export default function World3D() {
     <div
       className="world"
       onWheel={(e) => {
+        // Inside a bubble the scroll belongs to the charts and the page, never to the zoom:
+        // there, the zoom rail, pinch and the + and - keys still step in and out.
+        const st = useStore.getState();
+        if (st.level <= 2 && !st.home && !st.overview) {
+          wheel.current.acc = 0;
+          return;
+        }
         const w = wheel.current;
         const now = performance.now();
         if (now - w.last < 650) return;

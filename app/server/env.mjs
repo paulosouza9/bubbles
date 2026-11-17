@@ -29,6 +29,13 @@ export const config = {
   // ElevenLabs is capped at $1.40 per team. We stop generating new audio before that and the
   // browser falls back to its built-in speech synthesis.
   ttsBudgetUsd: Number(process.env.TTS_BUDGET_USD || 1.2),
+  // The live month-end check-in. The mini model by default; REALTIME_MODEL=gpt-realtime-2.1
+  // for the full one. Each session ends after REALTIME_MAX_SECONDS, and no new session opens
+  // once REALTIME_BUDGET_USD (an estimate, from the token counts) is spent.
+  realtimeModel: process.env.REALTIME_MODEL || "gpt-realtime-2.1-mini",
+  realtimeVoice: process.env.REALTIME_VOICE || "marin",
+  realtimeMaxSeconds: Number(process.env.REALTIME_MAX_SECONDS || 480),
+  realtimeBudgetUsd: Number(process.env.REALTIME_BUDGET_USD || 3),
   casesDir: resolve(REPO_DIR, "cases"),
   generatedDir: join(APP_DIR, "data", "generated"),
   audioDir: join(APP_DIR, "data", "audio"),
