@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/banner.png" alt="Bring the plan to life. Sherpas x UPV Sigma Data Club, 12 to 19 November 2026" width="100%">
+  <img src="../assets/banner.png" alt="Bring the plan to life. Sherpas x UPV Sigma Data Club, 12 to 19 November 2026" width="100%">
 </p>
 
 # Bring the plan to life
@@ -8,7 +8,7 @@
 
 ## Join the Discord first
 
-<a href="https://discord.gg/wVUZXmxdS"><img src="assets/discord-qr.png" alt="QR code: join the Discord" width="160" align="right"></a>
+<a href="https://discord.gg/wVUZXmxdS"><img src="../assets/discord-qr.png" alt="QR code: join the Discord" width="160" align="right"></a>
 
 **[Sigma Data Club x Sherpas Wealth on Discord](https://discord.gg/wVUZXmxdS)** is where everything happens during the week. Scan the code or click the link:
 
@@ -24,7 +24,7 @@ Every team member should join before the kick-off on 12 Nov.
 1. Read the brief below: the challenge, cases, tools and hand-ins are all on this page.
 2. Click **Use this template > Create a new repository** (top right on GitHub). One person per team does this, under their own account, and chooses **Public** so mentors and the jury can open it. Everyone in the team needs a free GitHub account.
 3. In your new repo, go to **Settings > Collaborators** and add your teammates.
-4. Follow [Connect to the cases and AI models](#connect-to-the-cases-and-ai-models), then build with the data in [`cases/`](cases/).
+4. Follow [Connect to the cases and AI models](#connect-to-the-cases-and-ai-models), then build with the data in [`cases/`](../cases/).
 
 Your repo is yours: any language, any framework, any structure. Delete or rewrite anything here, but keep a README that says what you built and how to run it.
 
@@ -111,10 +111,10 @@ Four synthetic households, true to life, built for this hackathon. Each one has 
 
 | Family | Score | Who they are | Their story | Plan in the app | Files |
 |---|---|---|---|---|---|
-| Timothy & Melanie Weah | 60 | 40 and 38, Liam (6) and Josh (3). An $18,000 credit card at 18% and a $15,000 student loan. $150,000 in cash, 401(k)s, 401(k)s and Roth accounts, a brokerage account, a $350,000 home. San Francisco, CA | Plenty of cash and an expensive card at the same time. Where should each dollar go? | [Open the plan](https://app.sherpaswealth.com/plan/shared/RcCtgoNkGmD6dvGtYVKWLGefdCTFdc4JP_jH9Jbz2jo) | [`cases/timothy-melanie-weah/`](cases/timothy-melanie-weah/) |
-| Michael Carter | 26 | 37, $180,000 salary, renting. Austin, TX | Wants a $550,000 home in 2027 and to retire at 58. Can he do both? | [Open the plan](https://app.sherpaswealth.com/plan/shared/ZshH0AUJjZnvwKIYtP5wYKyvI6Nc1nsGwQlDncXLfek) | [`cases/michael-carter/`](cases/michael-carter/) |
-| Daniel & Emily Johnson | 52 | 44 and 42, two kids, a $560,000 mortgage, an $18,000 card at 24.9%. Denver, CO | College for Oliver and Sophia, and retirement at 62 and 60. What comes first? | [Open the plan](https://app.sherpaswealth.com/plan/shared/FjVPq_UEwSMxaye8aOWj3osJWWSE3cDnYWcxm1X7I78) | [`cases/daniel-emily-johnson/`](cases/daniel-emily-johnson/) |
-| Samantha Lewis | 82 | 47, two teenagers, $250,000 salary. Miami, FL | Debt-free, with strong life and umbrella cover. College bills start now and a home purchase in 2030. What next? | [Open the plan](https://app.sherpaswealth.com/plan/shared/vyV2h64-qSet-sJuwkAHxw-iUaYV88Lkwsg29L2Y5y8) | [`cases/samantha-lewis/`](cases/samantha-lewis/) |
+| Timothy & Melanie Weah | 60 | 40 and 38, Liam (6) and Josh (3). An $18,000 credit card at 18% and a $15,000 student loan. $150,000 in cash, 401(k)s, 401(k)s and Roth accounts, a brokerage account, a $350,000 home. San Francisco, CA | Plenty of cash and an expensive card at the same time. Where should each dollar go? | [Open the plan](https://app.sherpaswealth.com/plan/shared/RcCtgoNkGmD6dvGtYVKWLGefdCTFdc4JP_jH9Jbz2jo) | [`cases/timothy-melanie-weah/`](../cases/timothy-melanie-weah/) |
+| Michael Carter | 26 | 37, $180,000 salary, renting. Austin, TX | Wants a $550,000 home in 2027 and to retire at 58. Can he do both? | [Open the plan](https://app.sherpaswealth.com/plan/shared/ZshH0AUJjZnvwKIYtP5wYKyvI6Nc1nsGwQlDncXLfek) | [`cases/michael-carter/`](../cases/michael-carter/) |
+| Daniel & Emily Johnson | 52 | 44 and 42, two kids, a $560,000 mortgage, an $18,000 card at 24.9%. Denver, CO | College for Oliver and Sophia, and retirement at 62 and 60. What comes first? | [Open the plan](https://app.sherpaswealth.com/plan/shared/FjVPq_UEwSMxaye8aOWj3osJWWSE3cDnYWcxm1X7I78) | [`cases/daniel-emily-johnson/`](../cases/daniel-emily-johnson/) |
+| Samantha Lewis | 82 | 47, two teenagers, $250,000 salary. Miami, FL | Debt-free, with strong life and umbrella cover. College bills start now and a home purchase in 2030. What next? | [Open the plan](https://app.sherpaswealth.com/plan/shared/vyV2h64-qSet-sJuwkAHxw-iUaYV88Lkwsg29L2Y5y8) | [`cases/samantha-lewis/`](../cases/samantha-lewis/) |
 
 **Plan in the app** opens the family's plan in Sherpas exactly as the client sees it: the advice, the living map and the investment analysis. No login needed, read only.
 
@@ -129,7 +129,7 @@ Each family folder contains the plan data, the family's persona and, where avail
 
 All amounts are US dollars. The JSON files contain the current plans for all four families. PDFs are included for Timothy and Melanie, Michael, and Daniel and Emily. Samantha's PDF is not included yet.
 
-Use the data from any language or framework. The only code included is a small voice example, [`examples/voice/`](examples/voice/). New to US finance? See [A few financial terms](#a-few-financial-terms).
+Use the data from any language or framework. The only code included is a small voice example, [`examples/voice/`](../examples/voice/). New to US finance? See [A few financial terms](#a-few-financial-terms).
 
 ## Your tools
 
@@ -145,7 +145,7 @@ Keys stay on your **backend**: the part of your app that runs on a computer or s
 | **4 cases through the MCP** | Read-only access to the four families and their plans, with a secure email login. See [Connect to the cases and AI models](#connect-to-the-cases-and-ai-models) |
 | **Discord mentors** | Sherpas mentors answer your questions, 13 to 18 Nov |
 | **$50 per team in AI credits** | For the models you choose, through the AI proxy, until 21 Nov |
-| **Voice starter** | [`examples/voice/`](examples/voice/): a small working voice app (browser ⇄ backend ⇄ AI proxy) about one of the families. Run it in two minutes and copy from it |
+| **Voice starter** | [`examples/voice/`](../examples/voice/): a small working voice app (browser ⇄ backend ⇄ AI proxy) about one of the families. Run it in two minutes and copy from it |
 | **Anything else** | Any stack, any model, any device |
 
 ## Your week, and what you hand in
@@ -175,7 +175,7 @@ Getting every figure exactly right does not count in the score: Sherpas already 
 ## Prizes
 
 <p align="center">
-  <img src="assets/join.png" alt="Sherpas wants you. Internship opportunities" width="100%">
+  <img src="../assets/join.png" alt="Sherpas wants you. Internship opportunities" width="100%">
 </p>
 
 Sherpas is looking for talent. The best prize is building real things with us: internships for the teams that stand out.
@@ -184,7 +184,7 @@ And there is cash: **1st 600 €**, **2nd 250 €**, **3rd 150 €**.
 
 ## Connect to the cases and AI models
 
-The **MCP gives you case data**: log in with your email in an AI tool, or use your personal MCP token from code. The **AI proxy runs the models** with your team AI key. The MCP token does not pay for model calls, and the team AI key does not log you into the MCP. All the case data is also in [`cases/`](cases/), so you can build without the MCP.
+The **MCP gives you case data**: log in with your email in an AI tool, or use your personal MCP token from code. The **AI proxy runs the models** with your team AI key. The MCP token does not pay for model calls, and the team AI key does not log you into the MCP. All the case data is also in [`cases/`](../cases/), so you can build without the MCP.
 
 | Service | Address | Access |
 |---|---|---|
@@ -326,7 +326,7 @@ const r = await mcp.callTool({ name: "get_case", arguments: { caseId: "michael-c
 console.log(JSON.parse(r.content[0].text).value.summary_main);
 ```
 
-Don't want the MCP in your app? The same JSON is in [`cases/`](cases/).
+Don't want the MCP in your app? The same JSON is in [`cases/`](../cases/).
 
 ### 5. Call a model
 
@@ -391,7 +391,7 @@ print(reply.choices[0].message.content)
 
 ### 6. Add voice if your idea uses it
 
-Fastest way to try it: run [`examples/voice/`](examples/voice/) (Node 22 or later and Chrome, about two minutes). It reads its own `.env` inside `examples/voice/`: paste the same block from your access page there. An open voice session counts as one of your team's 4 concurrent requests.
+Fastest way to try it: run [`examples/voice/`](../examples/voice/) (Node 22 or later and Chrome, about two minutes). It reads its own `.env` inside `examples/voice/`: paste the same block from your access page there. An open voice session counts as one of your team's 4 concurrent requests.
 
 To build your own:
 
